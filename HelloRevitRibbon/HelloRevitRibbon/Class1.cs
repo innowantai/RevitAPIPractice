@@ -14,14 +14,13 @@ namespace HelloRevitRibbon
     {
 
         public Autodesk.Revit.UI.Result OnShutdown(UIControlledApplication application)
-        {
-
+        { 
             return Result.Succeeded;
         }
 
         public Autodesk.Revit.UI.Result OnStartup(UIControlledApplication application)
         { 
-            StreamReader sr = new StreamReader("0_dllPath.txt");
+            StreamReader sr = new StreamReader(@"C:\Users\Wantai\Desktop\RevitAPIPractice\0_dllPath.txt");
             string imgPath = sr.ReadLine().Trim();
             string path = sr.ReadLine().Trim();
             string targetName = sr.ReadLine().Trim();
@@ -38,8 +37,50 @@ namespace HelloRevitRibbon
             Uri uriImage = new Uri(@imgPath);
             BitmapImage largeImage = new BitmapImage(uriImage);
             pushButton.LargeImage = largeImage;
+
+
+
+
+
+
+
+
+
+
+            //Guid guid1 = new Guid("0C3F66B5-3E26-4d24-A228-7A8358C76D39");
+            //FailureDefinitionId m_idWarning = new FailureDefinitionId(guid1);
+            //FailureDefinition m_fdWarning = FailureDefinition.CreateFailureDefinition(m_idWarning, FailureSeverity.Warning, "I am the warning.");
+            //m_fdWarning.AddResolutionType(FailureResolutionType.MoveElements, "MoveElements", typeof(DeleteElements));
+
+             
+            //using (Transaction transaction = new Transaction(revitDoc))
+            //{
+            //    transaction.Start();
+            //    FailureMessage fm = new FailureMessage(m_idWarning);
+            //    m_doc.PostFailure(fm);
+            //    transaction.Commit();
+            //}
+
+
             return Result.Succeeded;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
          
     }
