@@ -23,7 +23,6 @@ namespace _3_CreateBeam
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
 
-
             revitDoc = commandData.Application.ActiveUIDocument.Document;
             uidoc = commandData.Application.ActiveUIDocument;
 
@@ -37,33 +36,38 @@ namespace _3_CreateBeam
                 ele = eleID;
                 break;
             }
+             
 
-            Element targetFloor = revitDoc.GetElement(ele);
-            FloorType FT = targetFloor as Autodesk.Revit.DB.FloorType;
+            FloorType FT = new FilteredElementCollector(revitDoc)
+                                   .OfClass(typeof(FloorType))
+                                   .First<Element>(
+                                     e => e.Name.Equals("160mm 混凝土與 50mm 金屬板"))
+                                     as FloorType;
 
 
-
-
-            Transaction transaction = new Transaction(revitDoc); 
+            Transaction transaction = new Transaction(revitDoc);
             FailureHandlingOptions failureHandlingOptions = transaction.GetFailureHandlingOptions();
-            FailureHandler failureHandler  = new FailureHandler();
+            FailureHandler failureHandler = new FailureHandler();
             failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
             failureHandlingOptions.SetClearAfterRollback(false);
-            transaction.SetFailureHandlingOptions( failureHandlingOptions);
+            transaction.SetFailureHandlingOptions(failureHandlingOptions);
             transaction.Start("Transaction Name");
             // Do something here that causes the error
 
             List<string> Height = new List<string>();
-            List<XYZ> Data = LoadTest(ref Height,@"C:\Users\Wantai\Desktop\CADAPI\CADGetSeletedItemInformation\CADGetSeletedItemInformation\bin\Debug\result.txt");
-            double[] ev = new double[] { 0, 10, 20 };
+            List<XYZ> Data = LoadTest(ref Height, @"C:\Users\Wantai\Desktop\CADAPI\CombineTreeAndCircle\CombineTreeAndCircle\bin\Debug\final.txt");
+
             int kk = 0;
             foreach (var xyz in Data)
             {
-                CreateFloor(xyz.X, xyz.Y, ev[kk], xyz.Z, FT );
+                CreateFloor(xyz.X, xyz.Y, double.Parse(Height[kk]), xyz.Z, FT, ele);
                 kk = kk + 1;
             }
-
             transaction.Commit();
+
+
+
+
 
             // The following is just illustrative. 
             // In reality we would collect the errors 
@@ -76,14 +80,10 @@ namespace _3_CreateBeam
             //      + failureHandler.ErrorMessage);
             //}
 
-
-
-
-
             return Result.Succeeded;
         }
 
-        void CreateFloor(double x, double y, double hh, double rr,FloorType FT)
+        void CreateFloor(double x, double y, double hh, double rr, FloorType FT,ElementId ele)
         {
             double nx = UnitUtils.ConvertToInternalUnits(x, DisplayUnitType.DUT_MILLIMETERS);
             double ny = UnitUtils.ConvertToInternalUnits(y, DisplayUnitType.DUT_MILLIMETERS);
@@ -96,8 +96,8 @@ namespace _3_CreateBeam
             cur.Append(arc2); 
             Units u = new Units(UnitSystem.Metric);
             revitDoc.SetUnits(u);
-            ElementId EleID = new ElementId(355);
-            Floor floor = revitDoc.Create.NewFloor(cur, FT, revitDoc.GetElement(EleID) as Level, false);
+
+            Floor floor = revitDoc.Create.NewFloor(cur, FT, revitDoc.GetElement(ele) as Level, false);
             //Floor floor = revitDoc.Create.NewFloor(cur, false);
         }
 
@@ -137,6 +137,94 @@ namespace _3_CreateBeam
             return points;
 
         }
+
+         
+
+
+        /// <summary>
+        /// tmp
+        /// </summary>
+        /// <param name="commandData"></param>
+        void changeSlop(ExternalCommandData commandData)
+        { 
+            UIDocument uidoc = commandData.Application.ActiveUIDocument;
+            Document doc = uidoc.Document;
+            Selection sel = uidoc.Selection;
+
+            Reference ref1 = sel.PickObject(
+              ObjectType.Element, "Please pick a floor.");
+
+            Floor f = doc.GetElement(ref1.ElementId) as Floor;
+
+            if (f != null)
+            { 
+
+                // Retrieve floor edge model line elements.
+
+                ICollection<ElementId> deleted_ids;
+
+                using (Transaction tx = new Transaction(doc))
+                {
+                    tx.Start("Temporarily Delete Floor");
+
+                    deleted_ids = doc.Delete(f.Id);
+
+                    tx.RollBack();
+                }
+
+                // Grab the first floor edge model line.
+
+                ModelLine ml = null;
+
+                foreach (ElementId id in deleted_ids)
+                {
+                    ml = doc.GetElement(id) as ModelLine;
+
+                    if (null != ml)
+                    {
+                        break;
+                    }
+                }
+
+                if (null != ml)
+                {
+                    using (Transaction tx = new Transaction(doc))
+                    {
+                        tx.Start("Change Slope Angle");
+
+                        // This parameter is read only. Therefore,
+                        // the change does not work and we cannot 
+                        // change the floor slope angle after the 
+                        // floor is created. 
+                        ml.get_Parameter(
+                          BuiltInParameter.CURVE_IS_SLOPE_DEFINING)
+                            .Set(1);
+
+                        ml.get_Parameter(
+                          BuiltInParameter.ROOF_SLOPE)
+                            .Set(1.2);
+
+                        tx.Commit();
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
