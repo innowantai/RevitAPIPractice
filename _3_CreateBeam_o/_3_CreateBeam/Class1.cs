@@ -19,12 +19,9 @@ namespace _3_CreateBeam
         public Application revitApp;
         public Document revitDoc;
         public UIDocument uidoc;
-        public static string startPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-
-            string getPath = Path.Combine(startPath, "CAD_REVIT_DATA");
 
             revitDoc = commandData.Application.ActiveUIDocument.Document;
             uidoc = commandData.Application.ActiveUIDocument;
@@ -39,55 +36,34 @@ namespace _3_CreateBeam
                 ele = eleID;
                 break;
             }
+             
+
+            FloorType FT = new FilteredElementCollector(revitDoc)
+                                   .OfClass(typeof(FloorType))
+                                   .First<Element>(
+                                     e => e.Name.Equals("樹 150mm 2"))
+                                     as FloorType;
 
 
+            Transaction transaction = new Transaction(revitDoc);
+            FailureHandlingOptions failureHandlingOptions = transaction.GetFailureHandlingOptions();
+            FailureHandler failureHandler = new FailureHandler();
+            failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
+            failureHandlingOptions.SetClearAfterRollback(false);
+            transaction.SetFailureHandlingOptions(failureHandlingOptions);
+            transaction.Start("Transaction Name");
+            // Do something here that causes the error
 
+            List<string> Height = new List<string>();
+            List<XYZ> Data = LoadTest(ref Height, @"D:\Users\95074\Desktop\CADAPI\CombineTreeAndCircle\CombineTreeAndCircle\bin\Debug\final.txt");
 
-
-
-            //StreamWriter sw = new StreamWriter(Path.Combine(startPath, "revitType_FloorType.txt"));
-            //foreach (var ff in new FilteredElementCollector(revitDoc).OfClass(typeof(FloorType)))
-            //{ 
-            //    sw.WriteLine(ff.Name);
-            //    sw.Flush(); 
-            //}
-            //sw.Close(); 
-
-
-
-
-
-
-
-
-
-
-            //FloorType FT = new FilteredElementCollector(revitDoc)
-            //                       .OfClass(typeof(FloorType))
-            //                       .First<Element>(
-            //                         e => e.Name.Equals("160mm 混凝土與 50mm 金屬板"))
-            //                         as FloorType;
-
-
-            //Transaction transaction = new Transaction(revitDoc);
-            //FailureHandlingOptions failureHandlingOptions = transaction.GetFailureHandlingOptions();
-            //FailureHandler failureHandler = new FailureHandler();
-            //failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
-            //failureHandlingOptions.SetClearAfterRollback(false);
-            //transaction.SetFailureHandlingOptions(failureHandlingOptions);
-            //transaction.Start("Transaction Name");
-            //// Do something here that causes the error
-
-            //List<string> Height = new List<string>();
-            //List<XYZ> Data = LoadTest(ref Height, Path.Combine(getPath, "final.txt"));
-
-            //int kk = 0;
-            //foreach (var xyz in Data)
-            //{
-            //    CreateFloor(xyz.X, xyz.Y, double.Parse(Height[kk]), xyz.Z, FT, ele);
-            //    kk = kk + 1;
-            //}
-            //transaction.Commit();
+            int kk = 0;
+            foreach (var xyz in Data)
+            {
+                CreateFloor(xyz.X, xyz.Y, double.Parse(Height[kk]), xyz.Z, FT, ele);
+                kk = kk + 1;
+            }
+            transaction.Commit();
 
 
 
@@ -107,27 +83,27 @@ namespace _3_CreateBeam
             return Result.Succeeded;
         }
 
-        void CreateFloor(double x, double y, double hh, double rr, FloorType FT, ElementId ele)
+        void CreateFloor(double x, double y, double hh, double rr, FloorType FT,ElementId ele)
         {
             double nx = UnitUtils.ConvertToInternalUnits(x, DisplayUnitType.DUT_MILLIMETERS);
             double ny = UnitUtils.ConvertToInternalUnits(y, DisplayUnitType.DUT_MILLIMETERS);
             double nh = UnitUtils.ConvertToInternalUnits(hh, DisplayUnitType.DUT_MILLIMETERS);
-            double nrr = UnitUtils.ConvertToInternalUnits(rr, DisplayUnitType.DUT_MILLIMETERS);
+            double nrr = UnitUtils.ConvertToInternalUnits(rr, DisplayUnitType.DUT_MILLIMETERS); 
             CurveArray cur = new CurveArray();
             Arc arc1 = Arc.Create(Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(nx, ny, nh)), nrr, 0, Math.PI);
             Arc arc2 = Arc.Create(Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(nx, ny, nh)), nrr, Math.PI, Math.PI * 2);
             cur.Append(arc1);
-            cur.Append(arc2);
+            cur.Append(arc2); 
             Units u = new Units(UnitSystem.Metric);
             revitDoc.SetUnits(u);
-
-            Floor floor = revitDoc.Create.NewFloor(cur, FT, revitDoc.GetElement(ele) as Level, false);
+            ElementId eleID = new ElementId(340521);
+            Floor floor = revitDoc.Create.NewFloor(cur, FT, revitDoc.GetElement(eleID) as Level, false);
             //Floor floor = revitDoc.Create.NewFloor(cur, false);
         }
 
 
         void CreateFloorOri(double x, double y, double hh, double rr)
-        {
+        { 
             double nx = UnitUtils.ConvertToInternalUnits(x, DisplayUnitType.DUT_MILLIMETERS);
             double ny = UnitUtils.ConvertToInternalUnits(y, DisplayUnitType.DUT_MILLIMETERS);
             double nh = UnitUtils.ConvertToInternalUnits(hh, DisplayUnitType.DUT_MILLIMETERS);
@@ -142,7 +118,7 @@ namespace _3_CreateBeam
                 tran.Start("Create floor : ");
                 Units u = new Units(UnitSystem.Metric);
                 revitDoc.SetUnits(u);
-                Floor floor = revitDoc.Create.NewFloor(cur, false);
+                 Floor floor = revitDoc.Create.NewFloor(cur, false);
                 //Floor floor = revitDoc.Create.NewFloor(cur,;
                 tran.Commit();
             }
@@ -150,7 +126,7 @@ namespace _3_CreateBeam
         List<XYZ> LoadTest(ref List<string> Height, string path)
         {
             StreamReader sr = new StreamReader(path);
-            List<XYZ> points = new List<XYZ>();
+            List<XYZ> points = new List<XYZ>(); 
             while (sr.Peek() != -1)
             {
                 string[] tmp = sr.ReadLine().Split(',');
@@ -162,7 +138,7 @@ namespace _3_CreateBeam
 
         }
 
-
+         
 
 
         /// <summary>
@@ -170,7 +146,7 @@ namespace _3_CreateBeam
         /// </summary>
         /// <param name="commandData"></param>
         void changeSlop(ExternalCommandData commandData)
-        {
+        { 
             UIDocument uidoc = commandData.Application.ActiveUIDocument;
             Document doc = uidoc.Document;
             Selection sel = uidoc.Selection;
@@ -181,7 +157,7 @@ namespace _3_CreateBeam
             Floor f = doc.GetElement(ref1.ElementId) as Floor;
 
             if (f != null)
-            {
+            { 
 
                 // Retrieve floor edge model line elements.
 
@@ -585,5 +561,5 @@ namespace _3_CreateBeam
 
 
 
-    }
+    } 
 }

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制。
 // 變更這些屬性的值即可修改組件的相關
 // 資訊。
-[assembly: AssemblyTitle("_3_CreateBeam")]
+[assembly: AssemblyTitle("_6_ReadDWG")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("_3_CreateBeam")]
+[assembly: AssemblyProduct("_6_ReadDWG")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 下列 GUID 為專案公開 (Expose) 至 COM 時所要使用的 typelib ID
-[assembly: Guid("820518c9-41fe-4b3c-838f-827f8f2a5a39")]
+[assembly: Guid("997edd94-dfc6-4f9f-b2cf-6aa2f94c2d6c")]
 
 // 組件的版本資訊由下列四個值所組成: 
 //

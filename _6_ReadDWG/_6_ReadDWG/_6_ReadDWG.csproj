@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{820518C9-41FE-4B3C-838F-827F8F2A5A39}</ProjectGuid>
+    <ProjectGuid>{997EDD94-DFC6-4F9F-B2CF-6AA2F94C2D6C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>_3_CreateBeam</RootNamespace>
-    <AssemblyName>_3_CreateBeam</AssemblyName>
+    <RootNamespace>_6_ReadDWG</RootNamespace>
+    <AssemblyName>_6_ReadDWG</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
