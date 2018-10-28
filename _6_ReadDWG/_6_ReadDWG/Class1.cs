@@ -10,7 +10,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.ApplicationServices;
-using Autodesk.Revit.UI.Selection;
+using Autodesk.Revit.UI.Selection; 
 
 namespace _6_ReadDWG
 {
@@ -18,21 +18,18 @@ namespace _6_ReadDWG
     public class Class1 : IExternalCommand
     {
         public Application revitApp;
-        public Document revitDoc;
         public UIDocument uidoc;
+        public static Document revitDoc;
         public static string startPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
 
             string getPath = Path.Combine(startPath, "CAD_REVIT_DATA"); 
             revitDoc = commandData.Application.ActiveUIDocument.Document;
-            uidoc = commandData.Application.ActiveUIDocument;
-
-
-            ElementId ele = null;
-
-
+            uidoc = commandData.Application.ActiveUIDocument; 
+            ElementId ele = null; 
             Selection selection = uidoc.Selection;
             ICollection<ElementId> element = selection.GetElementIds();
             foreach (ElementId eleID in element)
@@ -41,54 +38,80 @@ namespace _6_ReadDWG
                 break;
             }
 
-            Level lv = revitDoc.GetElement(new ElementId(2607)) as Level;
-            AssignDefaultTypeToColumn(revitDoc);
-            //ProcessVisible(uidoc);
+
+            UIApplication uiapp = commandData.Application.ActiveUIDocument.Application; 
+
+
+            Dictionary<string, List<XYZ[]>> res = ProcessVisible(uidoc); 
+            Dictionary<string, List<FamilySymbol>> colFamilyTypes = FindFamilyTypes(revitDoc, BuiltInCategory.OST_StructuralColumns);
+            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = FindFamilyTypes(revitDoc, BuiltInCategory.OST_StructuralFraming);
+            List<Level> levels = FindLevels(revitDoc);
+            Form1 form = new Form1(colFamilyTypes, beamFamilyTypes, levels, res);
+            form.ShowDialog();
+
+            if (form.DialogResult == System.Windows.Forms.DialogResult.OK)
+            {
+                int CaseIndex = 0;
+                foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                {
+                    CreateColumn(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], form.returnTopLevel[CaseIndex], pp);
+                }
+                CaseIndex = 1;
+                foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                {
+                    CreateBeam(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], pp);
+                } 
+
+            }
+
+
+
 
             return Result.Succeeded;
         }
 
-
-        private void AssignDefaultTypeToColumn(Document document)
+         
+        public void ShowForm(UIApplication uiapp)
         {
-            ElementId defaultTypeId = document.GetDefaultFamilyTypeId(new ElementId(BuiltInCategory.OST_StructuralColumns));
 
-            if (defaultTypeId != ElementId.InvalidElementId)
+        }
+         
+
+        private static void CreateColumn(FamilySymbol Type, Level baseLevel, Level topLevel,XYZ[] points)
+        {
+            using (Transaction trans = new Transaction(revitDoc))
             {
-                FamilySymbol defaultType = document.GetElement(defaultTypeId) as FamilySymbol;
-                if (defaultType != null)
-                {
-
-                }
+                trans.Start("Create Column"); 
+                FamilyInstance familyInstance = null;
+                XYZ point = new XYZ((points[0].X + points[1].X)/2 , (points[0].Y + points[1].Y)/2, 0);
+                XYZ botPoint = new XYZ(point.X, point.Y, baseLevel.Elevation);
+                XYZ topPoint = new XYZ(point.X, point.Y, topLevel.Elevation );
+                familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(botPoint, topPoint), Type, baseLevel, StructuralType.Column);
+                trans.Commit(); 
             }
+        } 
 
-
-            FilteredElementCollector viewCollector = new FilteredElementCollector(document);
-            viewCollector.OfClass(typeof(Level));
-
-            foreach (Element viewElement in viewCollector)
+        private static void CreateBeam(FamilySymbol Type, Level baseLevel, XYZ[] points)
+        {
+            using (Transaction trans = new Transaction(revitDoc))
             {
-                Level ll = (Level)viewElement;
-                TaskDialog.Show("1", ll.Name); 
+                trans.Start("Create Beam");
+                FamilyInstance familyInstance = null;
+                XYZ p1 = new XYZ(points[0].X, points[0].Y, baseLevel.Elevation);
+                XYZ p2 = new XYZ(points[1].X, points[1].Y, baseLevel.Elevation);
+                familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(p1, p2), Type, baseLevel, StructuralType.Beam);
+                trans.Commit();
             }
-
-            //Dictionary<string, List<FamilySymbol>> winFamilyTypes = FindFamilyTypes(revitDoc, BuiltInCategory.OST_StructuralColumns);
-            //Dictionary<string, List<FamilySymbol>> winFamilyTypes = FindFamilyTypes(revitDoc, BuiltInCategory.OST_StructuralFraming);
-
-            //using (StreamWriter sw = new StreamWriter(@"C:\Users\Wantai\Desktop\Output.txt", true))
-            //{
-            //    sw.WriteLine(string.Format("{0} Window Families were found in {1} ms.", winFamilyTypes.Count(), 123));
-            //    foreach (KeyValuePair<string, List<FamilySymbol>> entry in winFamilyTypes)
-            //    {
-            //        sw.WriteLine(string.Format("\tFamily name: {0}", entry.Key));
-            //        foreach (FamilySymbol item in entry.Value)
-            //        {
-            //            sw.WriteLine(string.Format("\t\tSymbol/Type name: {0}", item.Name));
-            //        }
-            //    }
-            //}
         }
 
+
+
+        /// <summary>
+        /// Get Family Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <param name="cat"></param>
+        /// <returns></returns>
         public static Dictionary<string, List<FamilySymbol>> FindFamilyTypes(Document doc, BuiltInCategory cat)
         {
             return new FilteredElementCollector(doc)
@@ -100,36 +123,32 @@ namespace _6_ReadDWG
         }
 
 
-
-        FamilyInstance CreateColumn(Autodesk.Revit.DB.Document document, Level level)
+        /// <summary>
+        /// Get All Level
+        /// </summary>
+        /// <param name="document"></param>
+        /// <returns></returns>
+        public static List<Level> FindLevels(Document document)
         {
-            // Get a Column type from Revit
-            FilteredElementCollector collector = new FilteredElementCollector(document);
-            collector.OfClass(typeof(FamilySymbol)).OfCategory(BuiltInCategory.OST_StructuralColumns);
-            FamilySymbol columnType = collector.FirstElement() as FamilySymbol;
 
-            FamilyInstance instance = null;
-            if (null != columnType)
+            FilteredElementCollector viewCollector = new FilteredElementCollector(document);
+            viewCollector.OfClass(typeof(Level));
+            List<Level> ResLevel = new List<Level>();
+            foreach (Element viewElement in viewCollector)
             {
-                // Create a column at the origin
-                XYZ origin = new XYZ(0, 0, 0);
-
-                instance = document.Create.NewFamilyInstance(origin, columnType, level, StructuralType.Column);
+                Level ll = (Level)viewElement; 
+                ResLevel.Add(ll);
             }
-
-            return instance;
+            return ResLevel;
         }
-
-
-
-
+         
 
         /// <summary>
         /// Pick a DWG import instance, extract polylines 
         /// from it visible in the current view and create
         /// filled regions from them.
         /// </summary>
-        public void ProcessVisible(UIDocument uidoc)
+        public Dictionary<string, List<XYZ[]>> ProcessVisible(UIDocument uidoc)
         {
             Document doc = uidoc.Document;
             View active_view = doc.ActiveView; 
@@ -137,7 +156,7 @@ namespace _6_ReadDWG
 
             // Pick Import Instance 
             Reference r = uidoc.Selection.PickObject(ObjectType.Element,  new JtElementsOfClassSelectionFilter<ImportInstance>()); 
-            var import = doc.GetElement(r) as ImportInstance; 
+            var import = doc.GetElement(r) as ImportInstance;
 
             // Get Geometry 
             var ge = import.get_Geometry(new Options()); 
@@ -152,8 +171,9 @@ namespace _6_ReadDWG
                         foreach (var obj in ge2)
                         {
                             // Only work on PolyLines 
-                            if (obj is PolyLine | obj is Arc)
+                            if (obj is PolyLine | obj is Arc | obj is Line)
                             {
+
                                 // Use the GraphicsStyle to get the 
                                 // DWG layer linked to the Category 
                                 // for visibility.
@@ -172,6 +192,7 @@ namespace _6_ReadDWG
             }
 
             // Do something with the info 
+            Dictionary<string, List<XYZ[]>> res = new Dictionary<string, List<XYZ[]>>();
             if (visible_dwg_geo.Count > 0)
             {
                 // Retrieve first filled region type 
@@ -183,46 +204,104 @@ namespace _6_ReadDWG
 
                 using (var t = new Transaction(doc))
                 {
-                    t.Start("ProcessDWG"); 
+                    t.Start("ProcessDWG");
+                    List<XYZ[]> tmp = new List<XYZ[]>(); 
                     foreach (var obj in visible_dwg_geo)
-                    {  
-
+                    {
+                        var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
+                        string layerName = gStyle.GraphicsStyleCategory.Name;
+                        XYZ[] pp = new XYZ[2];
                         if (obj is PolyLine)
-                        {
+                        { 
                             // Create loops for detail region 
                             var poly = obj as PolyLine; 
                             var points = poly.GetCoordinates();
-                            
+                            pp[0] = points[0];
+                            pp[1] = points[2]; 
+
                         }
                         else if(obj is Arc)
                         {
-                            var Arc = obj as Arc;
-                            XYZ pp = Arc.Center;
-
-
+                            var Arc = obj as Arc; 
+                            pp[0] = Arc.Center;
+                            pp[1] = Arc.Center;
                         }
-                        
+                        else if (obj is Line)
+                        {
+                            var line = obj as Line;
+                            pp[0] = line.GetEndPoint(0);
+                            pp[1] = line.GetEndPoint(1); 
+                        }
+                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<XYZ[]>();
+                        tmp.Add(pp);
+                        res[layerName] = tmp; 
                     }
                 }
             }
+
+            return res;
         }
+
+
     }
+
+
+
+
+
+
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Allow selection of elements of type T only.
     /// </summary>
     class JtElementsOfClassSelectionFilter<T>
-      : ISelectionFilter where T : Element
-    {
-        public bool AllowElement(Element e)
+          : ISelectionFilter where T : Element
         {
-            return e is T;
-        }
+            public bool AllowElement(Element e)
+            {
+                return e is T;
+            }
 
-        public bool AllowReference(Reference r, XYZ p)
-        {
-            return true;
+            public bool AllowReference(Reference r, XYZ p)
+            {
+                return true;
+            }
         }
-    }
 }
 
