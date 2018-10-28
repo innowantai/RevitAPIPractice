@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
@@ -43,18 +42,13 @@
             this.cmbBeamCADLayers = new System.Windows.Forms.ComboBox();
             this.button1 = new System.Windows.Forms.Button();
             this.cmbBeamBaseLevel = new System.Windows.Forms.ComboBox();
-            this.label6 = new System.Windows.Forms.Label();
+            this.chCol = new System.Windows.Forms.CheckBox();
+            this.chBeam = new System.Windows.Forms.CheckBox();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label1.Location = new System.Drawing.Point(200, 30);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(67, 24);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "建立柱";
             // 
             // label2
             // 
@@ -101,7 +95,7 @@
             this.cmbColFamilyType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColFamilyType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColFamilyType.FormattingEnabled = true;
-            this.cmbColFamilyType.Location = new System.Drawing.Point(179, 150);
+            this.cmbColFamilyType.Location = new System.Drawing.Point(26, 86);
             this.cmbColFamilyType.Name = "cmbColFamilyType";
             this.cmbColFamilyType.Size = new System.Drawing.Size(162, 24);
             this.cmbColFamilyType.TabIndex = 5;
@@ -112,7 +106,7 @@
             this.cmbColType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColType.FormattingEnabled = true;
-            this.cmbColType.Location = new System.Drawing.Point(179, 191);
+            this.cmbColType.Location = new System.Drawing.Point(26, 116);
             this.cmbColType.Name = "cmbColType";
             this.cmbColType.Size = new System.Drawing.Size(162, 24);
             this.cmbColType.TabIndex = 6;
@@ -122,7 +116,7 @@
             this.cmbBeamType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBeamType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbBeamType.FormattingEnabled = true;
-            this.cmbBeamType.Location = new System.Drawing.Point(379, 191);
+            this.cmbBeamType.Location = new System.Drawing.Point(18, 121);
             this.cmbBeamType.Name = "cmbBeamType";
             this.cmbBeamType.Size = new System.Drawing.Size(162, 24);
             this.cmbBeamType.TabIndex = 8;
@@ -132,7 +126,7 @@
             this.cmbBeamFamilyType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBeamFamilyType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbBeamFamilyType.FormattingEnabled = true;
-            this.cmbBeamFamilyType.Location = new System.Drawing.Point(379, 150);
+            this.cmbBeamFamilyType.Location = new System.Drawing.Point(18, 86);
             this.cmbBeamFamilyType.Name = "cmbBeamFamilyType";
             this.cmbBeamFamilyType.Size = new System.Drawing.Size(162, 24);
             this.cmbBeamFamilyType.TabIndex = 7;
@@ -143,7 +137,7 @@
             this.cmbColBaseLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColBaseLevel.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColBaseLevel.FormattingEnabled = true;
-            this.cmbColBaseLevel.Location = new System.Drawing.Point(179, 249);
+            this.cmbColBaseLevel.Location = new System.Drawing.Point(26, 185);
             this.cmbColBaseLevel.Name = "cmbColBaseLevel";
             this.cmbColBaseLevel.Size = new System.Drawing.Size(162, 24);
             this.cmbColBaseLevel.TabIndex = 9;
@@ -153,7 +147,7 @@
             this.cmbColTopLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColTopLevel.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColTopLevel.FormattingEnabled = true;
-            this.cmbColTopLevel.Location = new System.Drawing.Point(179, 311);
+            this.cmbColTopLevel.Location = new System.Drawing.Point(26, 247);
             this.cmbColTopLevel.Name = "cmbColTopLevel";
             this.cmbColTopLevel.Size = new System.Drawing.Size(162, 24);
             this.cmbColTopLevel.TabIndex = 10;
@@ -163,7 +157,7 @@
             this.cmbColCADLayers.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColCADLayers.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColCADLayers.FormattingEnabled = true;
-            this.cmbColCADLayers.Location = new System.Drawing.Point(179, 90);
+            this.cmbColCADLayers.Location = new System.Drawing.Point(26, 26);
             this.cmbColCADLayers.Name = "cmbColCADLayers";
             this.cmbColCADLayers.Size = new System.Drawing.Size(162, 24);
             this.cmbColCADLayers.TabIndex = 11;
@@ -173,7 +167,7 @@
             this.cmbBeamCADLayers.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBeamCADLayers.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbBeamCADLayers.FormattingEnabled = true;
-            this.cmbBeamCADLayers.Location = new System.Drawing.Point(379, 90);
+            this.cmbBeamCADLayers.Location = new System.Drawing.Point(18, 26);
             this.cmbBeamCADLayers.Name = "cmbBeamCADLayers";
             this.cmbBeamCADLayers.Size = new System.Drawing.Size(162, 24);
             this.cmbBeamCADLayers.TabIndex = 12;
@@ -181,7 +175,7 @@
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("新細明體", 14F);
-            this.button1.Location = new System.Drawing.Point(438, 377);
+            this.button1.Location = new System.Drawing.Point(497, 385);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(103, 41);
             this.button1.TabIndex = 13;
@@ -194,53 +188,83 @@
             this.cmbBeamBaseLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbBeamBaseLevel.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbBeamBaseLevel.FormattingEnabled = true;
-            this.cmbBeamBaseLevel.Location = new System.Drawing.Point(379, 249);
+            this.cmbBeamBaseLevel.Location = new System.Drawing.Point(18, 185);
             this.cmbBeamBaseLevel.Name = "cmbBeamBaseLevel";
             this.cmbBeamBaseLevel.Size = new System.Drawing.Size(162, 24);
             this.cmbBeamBaseLevel.TabIndex = 14;
             // 
-            // label6
+            // chCol
             // 
-            this.label6.AutoSize = true;
-            this.label6.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label6.Location = new System.Drawing.Point(416, 30);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(67, 24);
-            this.label6.TabIndex = 15;
-            this.label6.Text = "建立梁";
+            this.chCol.AutoSize = true;
+            this.chCol.Font = new System.Drawing.Font("微軟正黑體", 14F);
+            this.chCol.Location = new System.Drawing.Point(229, 33);
+            this.chCol.Name = "chCol";
+            this.chCol.Size = new System.Drawing.Size(86, 28);
+            this.chCol.TabIndex = 16;
+            this.chCol.Text = "建立柱";
+            this.chCol.UseVisualStyleBackColor = true;
+            // 
+            // chBeam
+            // 
+            this.chBeam.AutoSize = true;
+            this.chBeam.Font = new System.Drawing.Font("微軟正黑體", 14F);
+            this.chBeam.Location = new System.Drawing.Point(484, 33);
+            this.chBeam.Name = "chBeam";
+            this.chBeam.Size = new System.Drawing.Size(86, 28);
+            this.chBeam.TabIndex = 17;
+            this.chBeam.Text = "建立梁";
+            this.chBeam.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.cmbBeamCADLayers);
+            this.groupBox1.Controls.Add(this.cmbBeamFamilyType);
+            this.groupBox1.Controls.Add(this.cmbBeamBaseLevel);
+            this.groupBox1.Controls.Add(this.cmbBeamType);
+            this.groupBox1.Location = new System.Drawing.Point(437, 67);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(200, 316);
+            this.groupBox1.TabIndex = 20;
+            this.groupBox1.TabStop = false;
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.cmbColCADLayers);
+            this.groupBox2.Controls.Add(this.cmbColTopLevel);
+            this.groupBox2.Controls.Add(this.cmbColFamilyType);
+            this.groupBox2.Controls.Add(this.cmbColBaseLevel);
+            this.groupBox2.Controls.Add(this.cmbColType);
+            this.groupBox2.Location = new System.Drawing.Point(188, 67);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(200, 316);
+            this.groupBox2.TabIndex = 21;
+            this.groupBox2.TabStop = false;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.label6);
-            this.Controls.Add(this.cmbBeamBaseLevel);
+            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.chBeam);
+            this.Controls.Add(this.chCol);
             this.Controls.Add(this.button1);
-            this.Controls.Add(this.cmbBeamCADLayers);
-            this.Controls.Add(this.cmbColCADLayers);
-            this.Controls.Add(this.cmbColTopLevel);
-            this.Controls.Add(this.cmbColBaseLevel);
-            this.Controls.Add(this.cmbBeamType);
-            this.Controls.Add(this.cmbBeamFamilyType);
-            this.Controls.Add(this.cmbColType);
-            this.Controls.Add(this.cmbColFamilyType);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
-            this.Controls.Add(this.label1);
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox2.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
@@ -255,6 +279,9 @@
         private System.Windows.Forms.ComboBox cmbBeamCADLayers;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ComboBox cmbBeamBaseLevel;
-        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.CheckBox chCol;
+        private System.Windows.Forms.CheckBox chBeam;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox groupBox2;
     }
 }

@@ -10,11 +10,20 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.ApplicationServices;
-using Autodesk.Revit.UI.Selection; 
+using Autodesk.Revit.UI.Selection;
+
+/// <summary>
+/// The targets will be solved :
+/// 1. If the family instance was not be used, that will appear the familySymbol is not activate 
+///    Solved : Create once the family instance with target FamilyTypes before use API to Auto-Creation
+/// 2. Need to get the LevelId of the GeometryInstance
+///    Solved : finding ------
+/// </summary>
+
 
 namespace _6_ReadDWG
 {
-    [Transaction(TransactionMode.Manual)]
+    [Transaction(TransactionMode.Manual)] 
     public class Class1 : IExternalCommand
     {
         public Application revitApp;
@@ -38,8 +47,7 @@ namespace _6_ReadDWG
                 break;
             }
 
-
-            UIApplication uiapp = commandData.Application.ActiveUIDocument.Application; 
+             
 
 
             Dictionary<string, List<XYZ[]>> res = ProcessVisible(uidoc); 
@@ -51,36 +59,37 @@ namespace _6_ReadDWG
 
             if (form.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
-                int CaseIndex = 0;
-                foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
-                {
-                    CreateColumn(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], form.returnTopLevel[CaseIndex], pp);
+                if (form.returnCol )
+                { 
+                    int CaseIndex = 0;
+                    foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                    {
+                        CreateColumn(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], form.returnTopLevel[CaseIndex], pp);
+                    }
                 }
-                CaseIndex = 1;
-                foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+
+                if (form.returnBeam)
                 {
-                    CreateBeam(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], pp);
-                } 
+                    int CaseIndex = 1;
+                    foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                    {
+                        CreateBeam(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], pp);
+                    } 
+                }
 
             }
-
-
-
+             
 
             return Result.Succeeded;
         }
-
          
-        public void ShowForm(UIApplication uiapp)
-        {
-
-        }
          
 
         private static void CreateColumn(FamilySymbol Type, Level baseLevel, Level topLevel,XYZ[] points)
         {
+              
             using (Transaction trans = new Transaction(revitDoc))
-            {
+            { 
                 trans.Start("Create Column"); 
                 FamilyInstance familyInstance = null;
                 XYZ point = new XYZ((points[0].X + points[1].X)/2 , (points[0].Y + points[1].Y)/2, 0);
@@ -92,7 +101,7 @@ namespace _6_ReadDWG
         } 
 
         private static void CreateBeam(FamilySymbol Type, Level baseLevel, XYZ[] points)
-        {
+        { 
             using (Transaction trans = new Transaction(revitDoc))
             {
                 trans.Start("Create Beam");

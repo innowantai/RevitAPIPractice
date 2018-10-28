@@ -28,6 +28,8 @@ namespace _6_ReadDWG
         public List<FamilySymbol> returnType = new List<FamilySymbol>();
         public List<Level> returnBaseLevel = new List<Level>();
         public List<Level> returnTopLevel = new List<Level>();
+        public bool returnCol = false;
+        public bool returnBeam = false;
 
         public Form1(Dictionary<string, List<FamilySymbol>> _colFamilyTypes, 
                      Dictionary<string, List<FamilySymbol>> _beamFamilyTypes, 
@@ -72,6 +74,8 @@ namespace _6_ReadDWG
             }
             cmbColCADLayers.SelectedIndex = 0;
             cmbBeamCADLayers.SelectedIndex = 1;
+            chCol.Checked = true;
+            chBeam.Checked = true;
 
         }
 
@@ -104,7 +108,7 @@ namespace _6_ReadDWG
         }
 
         private void button1_Click(object sender, EventArgs e)
-        {
+        { 
             returnCADLayers.Add(cmbColCADLayers.Text);
             returnCADLayers.Add(cmbBeamCADLayers.Text);
             returnType.Add(colFamilyTypes[cmbColFamilyType.Text][cmbColType.SelectedIndex]);
@@ -112,6 +116,8 @@ namespace _6_ReadDWG
             returnBaseLevel.Add(levels[cmbColBaseLevel.SelectedIndex]);
             returnBaseLevel.Add(levels[cmbBeamBaseLevel.SelectedIndex]);
             returnTopLevel.Add(levels[cmbColTopLevel.SelectedIndex]);
+            returnCol = chCol.Checked;
+            returnBeam = chBeam.Checked;
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.Close();
 
