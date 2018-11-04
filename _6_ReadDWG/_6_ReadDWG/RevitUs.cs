@@ -33,6 +33,11 @@ namespace _6_ReadDWG
             this.endPoint = _endPoint; 
         }
 
+        public double GetSlope()
+        { 
+            return (this.startPoint.Y-this.endPoint.Y)/(this.startPoint.X - this.endPoint.X); 
+        }
+
 
     }
 
@@ -183,9 +188,7 @@ namespace _6_ReadDWG
 
     }
 
-
-
-
+     
     public static class PreProcessing
     {
 
@@ -289,16 +292,14 @@ namespace _6_ReadDWG
 
 
         /// <summary>
-        /// Get beam parameter Lines using to Create beam those lines is the center line of beam
+        /// Get Beam parameter Lines using to Create beam those lines is the center line of beam
         /// </summary>
         /// <param name="Collect"></param>
         /// <param name="H_Direction_Lines"></param>
         /// <param name="V_Direction_Lines"></param>
         /// <param name="H_Beams"></param>
         /// <param name="V_Beams"></param>
-        public static List<LINE> BeamDrawLinesProcess(List<List<LINE>> Collect,
-                                                List<LINE> H_Direction_Lines,
-                                                List<LINE> V_Direction_Lines)
+        public static List<LINE> GetBeamDrawLines(List<List<LINE>> Collect, List<LINE> H_Direction_Lines, List<LINE> V_Direction_Lines)
         {
             List<LINE> RESULT = new List<LINE>(); 
 
@@ -363,6 +364,10 @@ namespace _6_ReadDWG
                     if (j == i || is_pickup[j] == 1) continue;
 
                     LINE cmpLine = sorted_H[j];
+
+                    if (baseLine.GetSlope() == -cmpLine.GetSlope())
+                        cmpLine = new LINE(cmpLine.endPoint, cmpLine.startPoint);
+
                     if (baseLine.startPoint.X == cmpLine.startPoint.X && baseLine.endPoint.X == cmpLine.endPoint.X)
                     {
                         is_pickup[i] = 1;
@@ -390,6 +395,10 @@ namespace _6_ReadDWG
                     if (j == i || is_pickup[j] == 1) continue;
 
                     LINE cmpLine = sorted_V[j];
+
+                    if (baseLine.GetSlope() == - cmpLine.GetSlope()) 
+                        cmpLine = new LINE(cmpLine.endPoint, cmpLine.startPoint); 
+
                     if (baseLine.startPoint.Y == cmpLine.startPoint.Y && baseLine.endPoint.Y == cmpLine.endPoint.Y)
                     {
                         is_pickup[i] = 1;
@@ -409,7 +418,15 @@ namespace _6_ReadDWG
 
 
 
-        public static  List<LINE> ColumnDrawLinesProcess(List<List<LINE>> Collect)
+        /// <summary>
+        /// Get Column centerpoint using to Create column 
+        /// </summary>
+        /// <param name="Collect"></param>
+        /// <param name="H_Direction_Lines"></param>
+        /// <param name="V_Direction_Lines"></param>
+        /// <param name="H_Beams"></param>
+        /// <param name="V_Beams"></param>
+        public static  List<LINE> GetColumnDrawCenterPoints(List<List<LINE>> Collect)
         {
 
             List<LINE> RESULT = new List<LINE>();

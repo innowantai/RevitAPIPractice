@@ -275,12 +275,12 @@
         private System.Windows.Forms.ComboBox cmbBeamFamilyType;
         private System.Windows.Forms.ComboBox cmbColBaseLevel;
         private System.Windows.Forms.ComboBox cmbColTopLevel;
-        private System.Windows.Forms.ComboBox cmbColCADLayers;
-        private System.Windows.Forms.ComboBox cmbBeamCADLayers;
+        public System.Windows.Forms.ComboBox cmbColCADLayers;
+        public System.Windows.Forms.ComboBox cmbBeamCADLayers;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ComboBox cmbBeamBaseLevel;
-        private System.Windows.Forms.CheckBox chCol;
-        private System.Windows.Forms.CheckBox chBeam;
+        public System.Windows.Forms.CheckBox chCol;
+        public System.Windows.Forms.CheckBox chBeam;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
     }

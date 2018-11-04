@@ -108,16 +108,12 @@ namespace _6_ReadDWG
         }
 
         private void button1_Click(object sender, EventArgs e)
-        { 
-            returnCADLayers.Add(cmbColCADLayers.Text);
-            returnCADLayers.Add(cmbBeamCADLayers.Text);
+        {  
             returnType.Add(colFamilyTypes[cmbColFamilyType.Text][cmbColType.SelectedIndex]);
             returnType.Add(beamFamilyTypes[cmbBeamFamilyType.Text][cmbBeamType.SelectedIndex]);
             returnBaseLevel.Add(levels[cmbColBaseLevel.SelectedIndex]);
             returnBaseLevel.Add(levels[cmbBeamBaseLevel.SelectedIndex]);
-            returnTopLevel.Add(levels[cmbColTopLevel.SelectedIndex]);
-            returnCol = chCol.Checked;
-            returnBeam = chBeam.Checked;
+            returnTopLevel.Add(levels[cmbColTopLevel.SelectedIndex]); 
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.Close();
 

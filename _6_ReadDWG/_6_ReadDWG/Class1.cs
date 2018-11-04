@@ -54,33 +54,68 @@ namespace _6_ReadDWG
             
 
             Dictionary<string, List<LINE>> res = GeneralCAD(uidoc);
-            List<LINE> LINES = res["柱"];
-            // Main_API();
+            Main_API();
 
-
-            PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect, 
-                                 out List<LINE> H_Direction_Lines, 
-                                 out List<LINE> V_Direction_Lines, 
-                                 out List<LINE> Else_Direction_Lines);
-
-            List<LINE> RES_BEAM = PreProcessing.BeamDrawLinesProcess(Collect,
-                                     H_Direction_Lines,
-                                     V_Direction_Lines );
-            List<LINE> RES_COLUMN = PreProcessing.ColumnDrawLinesProcess(Collect);
-
-
-            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
-            List<Level> levels = RevFind.GetLevels(revitDoc);
-            Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
-            Form1 form = new Form1(colFamilyTypes, beamFamilyTypes, levels, res);
-            form.ShowDialog();
-            foreach (LINE pp in RES_COLUMN)
-            {
-                RevCreate.CreateColumn(form.returnType[0], levels[0], levels[1], pp); 
-                        
-            }
+            //Dictionary<string, List<LINE>> CADGeometry = null;
+            //CADGeometry = GeneralCAD(uidoc);
+            //List<LINE> LINES = CADGeometry["牆"];
+            //PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
+            //                     out List<LINE> H_Direction_Lines,
+            //                     out List<LINE> V_Direction_Lines,
+            //                     out List<LINE> Else_Direction_Lines);
 
             return Result.Succeeded;
+        }
+
+
+
+
+
+        private void Main_API()
+        {
+            Dictionary<string, List<LINE>> CADGeometry = null;
+            CADGeometry = GeneralCAD(uidoc);
+            if (CADGeometry == null) return; 
+
+            Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
+            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
+            List<Level> levels = RevFind.GetLevels(revitDoc);
+            Form1 Form = new Form1(colFamilyTypes, beamFamilyTypes, levels, CADGeometry);
+            Form.ShowDialog(); 
+            if (Form.DialogResult == System.Windows.Forms.DialogResult.OK)
+            {
+                if (Form.chCol.Checked)
+                {
+                    int CaseIndex = 0;
+                    List<LINE> LINES = CADGeometry[Form.cmbColCADLayers.Text];
+                    PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
+                                         out List<LINE> H_Direction_Lines,
+                                         out List<LINE> V_Direction_Lines,
+                                         out List<LINE> Else_Direction_Lines); 
+                    List<LINE> RES_COLUMN = PreProcessing.GetColumnDrawCenterPoints(Collect);
+                    foreach (LINE pp in RES_COLUMN)
+                    {
+                        RevCreate.CreateColumn(Form.returnType[CaseIndex], Form.returnBaseLevel[CaseIndex], Form.returnTopLevel[CaseIndex], pp);
+                    }
+                }
+
+                if (Form.chBeam.Checked)
+                {
+                    int CaseIndex = 1; 
+                    List<LINE> LINES = CADGeometry[Form.cmbBeamCADLayers.Text];
+                    PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
+                                         out List<LINE> H_Direction_Lines,
+                                         out List<LINE> V_Direction_Lines,
+                                         out List<LINE> Else_Direction_Lines);
+                    List<LINE> RES_BEAM = PreProcessing.GetBeamDrawLines(Collect, H_Direction_Lines, V_Direction_Lines); 
+
+                    foreach (LINE pp in RES_BEAM)
+                    {
+                        RevCreate.CreateBeam(Form.returnType[CaseIndex], Form.returnBaseLevel[CaseIndex], pp);
+                    }
+                }
+
+            }
         }
 
 
@@ -165,15 +200,13 @@ namespace _6_ReadDWG
                             var points = poly.GetCoordinates();
                             for (int kk = 0; kk < points.Count - 1; kk++)
                             {
-                                XYZ[] pp = new XYZ[2];
-                                tmp.Add(new LINE( points[kk], points[kk + 1] ));
+                                tmp.Add(new LINE(points[kk], points[kk + 1]));
                             }
                         }
                         else if (obj is Line)
                         {
-                            XYZ[] pp = new XYZ[2];
                             var line = obj as Line;
-                            tmp.Add(new LINE( line.GetEndPoint(0),
+                            tmp.Add(new LINE(line.GetEndPoint(0),
                                                  line.GetEndPoint(1)));
                         }
                         //else if (obj is Arc)
@@ -192,39 +225,6 @@ namespace _6_ReadDWG
 
 
 
-
-
-        private void Main_API()
-        {
-            Dictionary<string, List<LINE>> res = ProcessVisible(uidoc);
-            Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
-            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
-            List<Level> levels = RevFind.GetLevels(revitDoc);
-            Form1 form = new Form1(colFamilyTypes, beamFamilyTypes, levels, res);
-            form.ShowDialog();
-
-            if (form.DialogResult == System.Windows.Forms.DialogResult.OK)
-            {
-                if (form.returnCol)
-                {
-                    int CaseIndex = 0;
-                    foreach (LINE pp in res[form.returnCADLayers[CaseIndex]])
-                    {
-                        RevCreate.CreateColumn(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], form.returnTopLevel[CaseIndex], pp);
-                    }
-                }
-
-                if (form.returnBeam)
-                {
-                    int CaseIndex = 1;
-                    foreach (LINE pp in res[form.returnCADLayers[CaseIndex]])
-                    {
-                        RevCreate.CreateBeam(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], pp);
-                    }
-                }
-
-            }
-        }
 
 
         /// <summary>
