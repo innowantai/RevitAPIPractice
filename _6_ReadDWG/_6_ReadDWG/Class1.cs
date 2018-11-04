@@ -51,74 +51,30 @@ namespace _6_ReadDWG
             }
 
             RevCreate = new CreateObjects(revitDoc);
-
+            
 
             Dictionary<string, List<XYZ[]>> res = GeneralCAD(uidoc);
             List<XYZ[]> LINES = res["梁"];
             // Main_API();
-             
-            int[] is_pickup = new int[LINES.Count];
-            List<List<XYZ[]>> Collect = new List<List<XYZ[]>>();
-            for (int i = 0; i < LINES.Count; i++)
-            {
-                if(is_pickup[i] == 1) continue;
 
-                XYZ[] baseLine = LINES[i];
-                List<XYZ[]> tmpData = new List<XYZ[]>();
-                tmpData.Add(baseLine);
-                int j = 0;
 
-                while (j < LINES.Count)
-                {
-                    XYZ[] cmpLine = LINES[j];
-                    if (is_pickup[j] == 1 || j == i)
-                    {
-                        j = j + 1;
-                        continue;
-                    }
-                    if (cmpLine[0].X == baseLine[1].X && cmpLine[0].Y == baseLine[1].Y)
-                    {
-                        baseLine = cmpLine;
-                        tmpData.Add(baseLine);
-                        is_pickup[j] = 1;
-                        j = 0;
-                    }
-                    else if (cmpLine[1].X == baseLine[1].X && cmpLine[1].Y == baseLine[1].Y)
-                    {
-                        baseLine = new XYZ[] { cmpLine[1], cmpLine[0] };
-                        tmpData.Add(baseLine);
-                        is_pickup[j] = 1;
-                        j = 0;
-                    }
-                    else if (tmpData[0][0].X == cmpLine[0].X && tmpData[0][0].Y == cmpLine[0].Y)
-                    {
-                        tmpData.Insert(0, new XYZ[] { cmpLine[1], cmpLine[0] });
-                        is_pickup[j] = 1;
-                        j = 0;
-                    }
-                    else if (tmpData[0][0].X == cmpLine[1].X && tmpData[0][0].Y == cmpLine[1].Y)
-                    {
-                        tmpData.Insert(0, cmpLine);
-                        is_pickup[j] = 1;
-                        j = 0;
-                    } 
-                    else
-                    {
-                        j = j + 1;
-                    } 
-                }
-                 
+            PreProcessing.ClassifyLines(LINES, out List<List<XYZ[]>> Collect, 
+                                 out List<XYZ[]> H_Direction_Lines, 
+                                 out List<XYZ[]> V_Direction_Lines, 
+                                 out List<XYZ[]> Else_Direction_Lines);
 
-                if (tmpData.Count != 1)
-                {
-                    Collect.Add(tmpData);
-                    is_pickup[i] = 1;
-                }
+            PreProcessing.BeamDrawLinesProcess(Collect,
+                                 H_Direction_Lines,
+                                 V_Direction_Lines,
+                                 out List<XYZ[]> H_Beams,
+                                 out List<XYZ[]> V_Beams);
 
-            }
 
             return Result.Succeeded;
         }
+
+
+
 
 
 
