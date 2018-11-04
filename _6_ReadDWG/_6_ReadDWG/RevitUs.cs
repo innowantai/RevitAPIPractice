@@ -85,7 +85,7 @@ namespace _6_ReadDWG
                     trans.Start("Activate Family instance");
                     Type.Activate();
                     trans.Commit();
-                } 
+                }
             }
 
             using (Transaction trans = new Transaction(revitDoc))
@@ -104,7 +104,7 @@ namespace _6_ReadDWG
 
 
     }
-    
+
     /// <summary>
     /// Get Revit Document Information
     /// </summary>
@@ -245,7 +245,7 @@ namespace _6_ReadDWG
                     is_pickup[i] = 1;
                 }
             }
-             
+
             H_Direction_Lines = new List<XYZ[]>();
             V_Direction_Lines = new List<XYZ[]>();
             Else_Direction_Lines = new List<XYZ[]>();
@@ -281,12 +281,63 @@ namespace _6_ReadDWG
         /// <param name="V_Direction_Lines"></param>
         /// <param name="H_Beams"></param>
         /// <param name="V_Beams"></param>
-        public static void BeamDrawLinesProcess(List<List<XYZ[]>> Collect, 
+        public static void BeamDrawLinesProcess(List<List<XYZ[]>> Collect,
                                                 List<XYZ[]> H_Direction_Lines,
                                                 List<XYZ[]> V_Direction_Lines,
                                                 out List<XYZ[]> H_Beams,
                                                 out List<XYZ[]> V_Beams)
         {
+            List<XYZ[]> RESULT = new List<XYZ[]>();
+
+
+            /// Collect Part
+            foreach (List<XYZ[]> co in Collect)
+            {
+                if (co.Count() <= 4)
+                {
+                    
+                    XYZ[] line1 = co[0];
+                    XYZ[] line2 = co[1];
+                    XYZ p1 = null;
+                    XYZ p2 = null;
+                    double ll1 = GeometryResult.Get_Length(line1);
+                    double ll2 = GeometryResult.Get_Length(line2);
+                    if (ll1 > ll2)
+                    {
+                        if (line1[0].Y == line1[1].Y)
+                        {
+                            p1 = new XYZ(line1[0].X, (line1[0].Y + line2[1].Y) / 2, 0);
+                            p2 = new XYZ(line1[1].X, (line1[0].Y + line2[1].Y) / 2, 0); 
+                        }
+                        else if (line1[0].X == line1[1].X)
+                        {
+                            p1 = new XYZ((line1[0].X + line2[1].X) / 2, line1[0].Y, 0);
+                            p2 = new XYZ((line1[0].X + line2[1].X) / 2, line1[1].Y, 0); 
+                        }
+                    }
+                    else
+                    {
+                        if(line2[0].Y == line2[1].Y)
+                        {
+                            p1 = new XYZ(line2[0].X, (line1[0].Y + line2[1].Y) / 2, 0);
+                            p2 = new XYZ(line2[1].X, (line1[0].Y + line2[1].Y) / 2, 0);
+
+                        }
+                        else if (line2[0].X == line2[1].X)
+                        {
+                            p1 = new XYZ((line1[0].X + line1[1].X) / 2, line2[0].Y, 0);
+                            p2 = new XYZ((line1[0].X + line1[1].X) / 2, line2[1].Y, 0); 
+                        }
+                    }
+
+                    if (p1 != null)
+                    {
+                        RESULT.Add(new XYZ[] { p1, p2 });
+                    } 
+                } 
+            }
+
+            /// H-Beam Part
             List<XYZ[]> sorted_H = H_Direction_Lines.OrderBy(e => e[0].Y).ToList();
             H_Beams = new List<XYZ[]>();
             int[] is_pickup = new int[sorted_H.Count()];
@@ -304,15 +355,16 @@ namespace _6_ReadDWG
                     {
                         is_pickup[i] = 1;
                         is_pickup[j] = 1;
-                        XYZ p1 = new XYZ((baseLine[0].X + cmpLine[0].X)/2, (baseLine[0].Y + cmpLine[0].Y)/2, 0);
-                        XYZ p2 = new XYZ((baseLine[1].X + cmpLine[1].X)/2, (baseLine[1].Y + cmpLine[1].Y)/2, 0);
+                        XYZ p1 = new XYZ((baseLine[0].X + cmpLine[0].X) / 2, (baseLine[0].Y + cmpLine[0].Y) / 2, 0);
+                        XYZ p2 = new XYZ((baseLine[1].X + cmpLine[1].X) / 2, (baseLine[1].Y + cmpLine[1].Y) / 2, 0);
                         H_Beams.Add(new XYZ[] { p1, p2 });
+                        RESULT.Add(new XYZ[] { p1, p2 });
                         break;
                     }
                 }
             }
 
-
+            /// V-Beam Part
             V_Beams = new List<XYZ[]>();
             List<XYZ[]> sorted_V = V_Direction_Lines.OrderBy(e => e[0].X).ToList();
             is_pickup = new int[sorted_V.Count()];
@@ -332,17 +384,16 @@ namespace _6_ReadDWG
                         is_pickup[j] = 1;
                         XYZ p1 = new XYZ((baseLine[0].X + cmpLine[0].X) / 2, (baseLine[0].Y + cmpLine[0].Y) / 2, 0);
                         XYZ p2 = new XYZ((baseLine[1].X + cmpLine[1].X) / 2, (baseLine[1].Y + cmpLine[1].Y) / 2, 0);
-                        V_Beams.Add(new XYZ[] { p1,p2});
+                        V_Beams.Add(new XYZ[] { p1, p2 });
+                        RESULT.Add(new XYZ[] { p1, p2 });
                         break;
                     }
                 }
             }
 
 
+
         }
-
-
-
     }
 
 
@@ -353,16 +404,23 @@ namespace _6_ReadDWG
     /// Revit Geometry Processing
     /// </summary>
     public static class GeometryResult
-    { 
+    {
+
         public static bool Is_Horizontal(XYZ[] line)
-        { 
-            return line[0].Y == line[1].Y  ? true : false;
+        {
+            return line[0].Y == line[1].Y ? true : false;
         }
 
         public static bool Is_Vertical(XYZ[] line)
         {
-            return line[0].X == line[1].X  ? true : false;
+            return line[0].X == line[1].X ? true : false;
         }
-         
+
+        public static double Get_Length(XYZ[] Line)
+        {
+            return Math.Sqrt(
+                (Line[0].X - Line[1].X) * (Line[0].X - Line[1].X) +
+                (Line[0].Y - Line[1].Y) * (Line[0].Y - Line[1].Y));
+        }
     }
 }
