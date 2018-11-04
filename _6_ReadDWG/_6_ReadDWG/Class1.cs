@@ -53,19 +53,20 @@ namespace _6_ReadDWG
             RevCreate = new CreateObjects(revitDoc);
             
 
-            Dictionary<string, List<XYZ[]>> res = GeneralCAD(uidoc);
-            List<XYZ[]> LINES = res["梁"];
+            Dictionary<string, List<LINE>> res = GeneralCAD(uidoc);
+            List<LINE> LINES = res["柱"];
             // Main_API();
 
 
-            PreProcessing.ClassifyLines(LINES, out List<List<XYZ[]>> Collect, 
-                                 out List<XYZ[]> H_Direction_Lines, 
-                                 out List<XYZ[]> V_Direction_Lines, 
-                                 out List<XYZ[]> Else_Direction_Lines);
+            PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect, 
+                                 out List<LINE> H_Direction_Lines, 
+                                 out List<LINE> V_Direction_Lines, 
+                                 out List<LINE> Else_Direction_Lines);
 
-            List<XYZ[]> RES_BEAM = PreProcessing.BeamDrawLinesProcess(Collect,
+            List<LINE> RES_BEAM = PreProcessing.BeamDrawLinesProcess(Collect,
                                      H_Direction_Lines,
                                      V_Direction_Lines );
+            List<LINE> RES_COLUMN = PreProcessing.ColumnDrawLinesProcess(Collect);
 
 
             Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
@@ -73,9 +74,10 @@ namespace _6_ReadDWG
             Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
             Form1 form = new Form1(colFamilyTypes, beamFamilyTypes, levels, res);
             form.ShowDialog();
-            foreach (XYZ[] pp in RES_BEAM)
+            foreach (LINE pp in RES_COLUMN)
             {
-                RevCreate.CreateBeam(form.returnType[1], levels[0], pp); 
+                RevCreate.CreateColumn(form.returnType[0], levels[0], levels[1], pp); 
+                        
             }
 
             return Result.Succeeded;
@@ -91,7 +93,7 @@ namespace _6_ReadDWG
         /// from it visible in the current view and create
         /// filled regions from them.
         /// </summary>
-        public Dictionary<string, List<XYZ[]>> GeneralCAD(UIDocument uidoc)
+        public Dictionary<string, List<LINE>> GeneralCAD(UIDocument uidoc)
         {
             Document doc = uidoc.Document;
             View active_view = doc.ActiveView;
@@ -136,7 +138,7 @@ namespace _6_ReadDWG
 
 
             // Do something with the info 
-            Dictionary<string, List<XYZ[]>> res = new Dictionary<string, List<XYZ[]>>();
+            Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
             if (visible_dwg_geo.Count > 0)
             {
                 // Retrieve first filled region type 
@@ -149,13 +151,13 @@ namespace _6_ReadDWG
                 using (var t = new Transaction(doc))
                 {
                     t.Start("ProcessDWG");
-                    List<XYZ[]> tmp = new List<XYZ[]>();
+                    List<LINE> tmp = new List<LINE>();
                     foreach (var obj in visible_dwg_geo)
                     {
                         var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
                         string layerName = gStyle.GraphicsStyleCategory.Name;
 
-                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<XYZ[]>();
+                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
                         if (obj is PolyLine)
                         {
                             // Create loops for detail region 
@@ -164,15 +166,15 @@ namespace _6_ReadDWG
                             for (int kk = 0; kk < points.Count - 1; kk++)
                             {
                                 XYZ[] pp = new XYZ[2];
-                                tmp.Add(new XYZ[2] { points[kk], points[kk + 1] });
+                                tmp.Add(new LINE( points[kk], points[kk + 1] ));
                             }
                         }
                         else if (obj is Line)
                         {
                             XYZ[] pp = new XYZ[2];
                             var line = obj as Line;
-                            tmp.Add(new XYZ[2] { line.GetEndPoint(0),
-                                                 line.GetEndPoint(1) });
+                            tmp.Add(new LINE( line.GetEndPoint(0),
+                                                 line.GetEndPoint(1)));
                         }
                         //else if (obj is Arc)
                         //{
@@ -194,7 +196,7 @@ namespace _6_ReadDWG
 
         private void Main_API()
         {
-            Dictionary<string, List<XYZ[]>> res = ProcessVisible(uidoc);
+            Dictionary<string, List<LINE>> res = ProcessVisible(uidoc);
             Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
             Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
             List<Level> levels = RevFind.GetLevels(revitDoc);
@@ -206,7 +208,7 @@ namespace _6_ReadDWG
                 if (form.returnCol)
                 {
                     int CaseIndex = 0;
-                    foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                    foreach (LINE pp in res[form.returnCADLayers[CaseIndex]])
                     {
                         RevCreate.CreateColumn(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], form.returnTopLevel[CaseIndex], pp);
                     }
@@ -215,7 +217,7 @@ namespace _6_ReadDWG
                 if (form.returnBeam)
                 {
                     int CaseIndex = 1;
-                    foreach (XYZ[] pp in res[form.returnCADLayers[CaseIndex]])
+                    foreach (LINE pp in res[form.returnCADLayers[CaseIndex]])
                     {
                         RevCreate.CreateBeam(form.returnType[CaseIndex], form.returnBaseLevel[CaseIndex], pp);
                     }
@@ -230,7 +232,7 @@ namespace _6_ReadDWG
         /// from it visible in the current view and create
         /// filled regions from them.
         /// </summary>
-        public Dictionary<string, List<XYZ[]>> ProcessVisible(UIDocument uidoc)
+        public Dictionary<string, List<LINE>> ProcessVisible(UIDocument uidoc)
         {
             Document doc = uidoc.Document;
             View active_view = doc.ActiveView;
@@ -274,7 +276,7 @@ namespace _6_ReadDWG
             }
 
             // Do something with the info 
-            Dictionary<string, List<XYZ[]>> res = new Dictionary<string, List<XYZ[]>>();
+            Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
             if (visible_dwg_geo.Count > 0)
             {
                 // Retrieve first filled region type 
@@ -287,34 +289,31 @@ namespace _6_ReadDWG
                 using (var t = new Transaction(doc))
                 {
                     t.Start("ProcessDWG");
-                    List<XYZ[]> tmp = new List<XYZ[]>();
+                    List<LINE> tmp = new List<LINE>();
                     foreach (var obj in visible_dwg_geo)
                     {
                         var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
                         string layerName = gStyle.GraphicsStyleCategory.Name;
-                        XYZ[] pp = new XYZ[2];
+                        LINE pp = null;
                         if (obj is PolyLine)
                         {
                             // Create loops for detail region 
                             var poly = obj as PolyLine;
-                            var points = poly.GetCoordinates();
-                            pp[0] = points[0];
-                            pp[1] = points[2];
+                            var points = poly.GetCoordinates(); 
+                            pp = new LINE(points[0], points[2]);
 
                         }
                         else if (obj is Arc)
                         {
-                            var Arc = obj as Arc;
-                            pp[0] = Arc.Center;
-                            pp[1] = Arc.Center;
+                            var Arc = obj as Arc; 
+                            pp = new LINE(Arc.Center, Arc.Center);
                         }
                         else if (obj is Line)
                         {
-                            var line = obj as Line;
-                            pp[0] = line.GetEndPoint(0);
-                            pp[1] = line.GetEndPoint(1);
+                            var line = obj as Line; 
+                            pp = new LINE(line.GetEndPoint(0), line.GetEndPoint(1));
                         }
-                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<XYZ[]>();
+                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
                         tmp.Add(pp);
                         res[layerName] = tmp;
                     }

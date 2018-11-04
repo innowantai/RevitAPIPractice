@@ -23,6 +23,21 @@ using Autodesk.Revit.UI.Selection;
 /// 
 namespace _6_ReadDWG
 {
+    public class LINE
+    {
+        public XYZ startPoint { get; set; }
+        public XYZ endPoint { get; set; }
+        public LINE(XYZ _startPoint, XYZ _endPoint)
+        {
+            this.startPoint = _startPoint;
+            this.endPoint = _endPoint; 
+        }
+
+
+    }
+
+
+
     /// <summary>
     /// Create Revit Element or Family
     /// </summary>
@@ -45,7 +60,7 @@ namespace _6_ReadDWG
         /// <param name="baseLevel"></param>
         /// <param name="topLevel"></param>
         /// <param name="points"></param>
-        public void CreateColumn(FamilySymbol Type, Level baseLevel, Level topLevel, XYZ[] points)
+        public void CreateColumn(FamilySymbol Type, Level baseLevel, Level topLevel, LINE points)
         {
 
             if (!Type.IsActive)
@@ -62,7 +77,7 @@ namespace _6_ReadDWG
             {
                 trans.Start("Create Column");
                 FamilyInstance familyInstance = null;
-                XYZ point = new XYZ((points[0].X + points[1].X) / 2, (points[0].Y + points[1].Y) / 2, 0);
+                XYZ point = new XYZ((points.startPoint.X + points.endPoint.X) / 2, (points.startPoint.Y + points.endPoint.Y) / 2, 0);
                 XYZ botPoint = new XYZ(point.X, point.Y, baseLevel.Elevation);
                 XYZ topPoint = new XYZ(point.X, point.Y, topLevel.Elevation);
                 familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(botPoint, topPoint), Type, baseLevel, StructuralType.Column);
@@ -76,7 +91,7 @@ namespace _6_ReadDWG
         /// <param name="Type"></param>
         /// <param name="baseLevel"></param>
         /// <param name="points"></param>
-        public void CreateBeam(FamilySymbol Type, Level baseLevel, XYZ[] points)
+        public void CreateBeam(FamilySymbol Type, Level baseLevel, LINE points)
         {
             if (!Type.IsActive)
             {
@@ -93,8 +108,8 @@ namespace _6_ReadDWG
 
                 trans.Start("Create Beam");
                 FamilyInstance familyInstance = null;
-                XYZ p1 = new XYZ(points[0].X, points[0].Y, baseLevel.Elevation);
-                XYZ p2 = new XYZ(points[1].X, points[1].Y, baseLevel.Elevation);
+                XYZ p1 = new XYZ(points.startPoint.X, points.startPoint.Y, baseLevel.Elevation);
+                XYZ p2 = new XYZ(points.endPoint.X, points.endPoint.Y, baseLevel.Elevation);
                 familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(p1, p2), Type, baseLevel, StructuralType.Beam);
                 trans.Commit();
             }
@@ -182,52 +197,52 @@ namespace _6_ReadDWG
         /// <param name="H_Direction_Lines"></param>
         /// <param name="V_Direction_Lines"></param>
         /// <param name="Else_Direction_Lines"></param>
-        public static void ClassifyLines(List<XYZ[]> LINES,
-                                    out List<List<XYZ[]>> Collect,
-                                    out List<XYZ[]> H_Direction_Lines,
-                                    out List<XYZ[]> V_Direction_Lines,
-                                    out List<XYZ[]> Else_Direction_Lines)
+        public static void ClassifyLines(List<LINE> LINES,
+                                    out List<List<LINE>> Collect,
+                                    out List<LINE> H_Direction_Lines,
+                                    out List<LINE> V_Direction_Lines,
+                                    out List<LINE> Else_Direction_Lines)
         {
-            Collect = new List<List<XYZ[]>>();
+            Collect = new List<List<LINE>>();
             int[] is_pickup = new int[LINES.Count];
             for (int i = 0; i < LINES.Count; i++)
             {
                 if (is_pickup[i] == 1) continue;
 
-                XYZ[] baseLine = LINES[i];
-                List<XYZ[]> tmpData = new List<XYZ[]>();
+                LINE baseLine = LINES[i];
+                List<LINE> tmpData = new List<LINE>();
                 tmpData.Add(baseLine);
                 int j = 0;
 
                 while (j < LINES.Count)
                 {
-                    XYZ[] cmpLine = LINES[j];
+                    LINE cmpLine = LINES[j];
                     if (is_pickup[j] == 1 || j == i)
                     {
                         j = j + 1;
                         continue;
                     }
-                    if (cmpLine[0].X == baseLine[1].X && cmpLine[0].Y == baseLine[1].Y)
+                    if (cmpLine.startPoint.X == baseLine.endPoint.X && cmpLine.startPoint.Y == baseLine.endPoint.Y)
                     {
                         baseLine = cmpLine;
                         tmpData.Add(baseLine);
                         is_pickup[j] = 1;
                         j = 0;
                     }
-                    else if (cmpLine[1].X == baseLine[1].X && cmpLine[1].Y == baseLine[1].Y)
+                    else if (cmpLine.endPoint.X == baseLine.endPoint.X && cmpLine.endPoint.Y == baseLine.endPoint.Y)
                     {
-                        baseLine = new XYZ[] { cmpLine[1], cmpLine[0] };
+                        baseLine = new LINE ( cmpLine.endPoint, cmpLine.startPoint );
                         tmpData.Add(baseLine);
                         is_pickup[j] = 1;
                         j = 0;
                     }
-                    else if (tmpData[0][0].X == cmpLine[0].X && tmpData[0][0].Y == cmpLine[0].Y)
+                    else if (tmpData[0].startPoint.X == cmpLine.startPoint.X && tmpData[0].startPoint.Y == cmpLine.startPoint.Y)
                     {
-                        tmpData.Insert(0, new XYZ[] { cmpLine[1], cmpLine[0] });
+                        tmpData.Insert(0, new LINE ( cmpLine.endPoint, cmpLine.startPoint ));
                         is_pickup[j] = 1;
                         j = 0;
                     }
-                    else if (tmpData[0][0].X == cmpLine[1].X && tmpData[0][0].Y == cmpLine[1].Y)
+                    else if (tmpData[0].startPoint.X == cmpLine.endPoint.X && tmpData[0].startPoint.Y == cmpLine.endPoint.Y)
                     {
                         tmpData.Insert(0, cmpLine);
                         is_pickup[j] = 1;
@@ -246,15 +261,15 @@ namespace _6_ReadDWG
                 }
             }
 
-            H_Direction_Lines = new List<XYZ[]>();
-            V_Direction_Lines = new List<XYZ[]>();
-            Else_Direction_Lines = new List<XYZ[]>();
+            H_Direction_Lines = new List<LINE>();
+            V_Direction_Lines = new List<LINE>();
+            Else_Direction_Lines = new List<LINE>();
 
             for (int ii = 0; ii < is_pickup.Count(); ii++)
             {
                 if (is_pickup[ii] == 0)
                 {
-                    XYZ[] line = LINES[ii];
+                    LINE line = LINES[ii];
                     if (GeometryResult.Is_Horizontal(line))
                     {
                         H_Direction_Lines.Add(line);
@@ -281,109 +296,108 @@ namespace _6_ReadDWG
         /// <param name="V_Direction_Lines"></param>
         /// <param name="H_Beams"></param>
         /// <param name="V_Beams"></param>
-        public static List<XYZ[]> BeamDrawLinesProcess(List<List<XYZ[]>> Collect,
-                                                List<XYZ[]> H_Direction_Lines,
-                                                List<XYZ[]> V_Direction_Lines)
+        public static List<LINE> BeamDrawLinesProcess(List<List<LINE>> Collect,
+                                                List<LINE> H_Direction_Lines,
+                                                List<LINE> V_Direction_Lines)
         {
-            List<XYZ[]> RESULT = new List<XYZ[]>();
-
+            List<LINE> RESULT = new List<LINE>(); 
 
             /// Collect Part
-            foreach (List<XYZ[]> co in Collect)
+            foreach (List<LINE> co in Collect)
             {
                 if (co.Count() <= 4)
                 {
-                    
-                    XYZ[] line1 = co[0];
-                    XYZ[] line2 = co[1];
+                     
+                    LINE line1 = co[0];
+                    LINE line2 = co[1];
                     XYZ p1 = null;
                     XYZ p2 = null;
                     double ll1 = GeometryResult.Get_Length(line1);
                     double ll2 = GeometryResult.Get_Length(line2);
                     if (ll1 > ll2)
                     {
-                        if (line1[0].Y == line1[1].Y)
+                        if (line1.startPoint.Y == line1.endPoint.Y)
                         {
-                            p1 = new XYZ(line1[0].X, (line1[0].Y + line2[1].Y) / 2, 0);
-                            p2 = new XYZ(line1[1].X, (line1[0].Y + line2[1].Y) / 2, 0); 
+                            p1 = new XYZ(line1.startPoint.X, (line1.startPoint.Y + line2.endPoint.Y) / 2, 0);
+                            p2 = new XYZ(line1.endPoint.X, (line1.startPoint.Y + line2.endPoint.Y) / 2, 0); 
                         }
-                        else if (line1[0].X == line1[1].X)
+                        else if (line1.startPoint.X == line1.endPoint.X)
                         {
-                            p1 = new XYZ((line1[0].X + line2[1].X) / 2, line1[0].Y, 0);
-                            p2 = new XYZ((line1[0].X + line2[1].X) / 2, line1[1].Y, 0); 
+                            p1 = new XYZ((line1.startPoint.X + line2.endPoint.X) / 2, line1.startPoint.Y, 0);
+                            p2 = new XYZ((line1.startPoint.X + line2.endPoint.X) / 2, line1.endPoint.Y, 0); 
                         }
                     }
                     else
                     {
-                        if(line2[0].Y == line2[1].Y)
+                        if(line2.startPoint.Y == line2.endPoint.Y)
                         {
-                            p1 = new XYZ(line2[0].X, (line1[0].Y + line2[1].Y) / 2, 0);
-                            p2 = new XYZ(line2[1].X, (line1[0].Y + line2[1].Y) / 2, 0);
+                            p1 = new XYZ(line2.startPoint.X, (line1.startPoint.Y + line2.endPoint.Y) / 2, 0);
+                            p2 = new XYZ(line2.endPoint.X, (line1.startPoint.Y + line2.endPoint.Y) / 2, 0);
 
                         }
-                        else if (line2[0].X == line2[1].X)
+                        else if (line2.startPoint.X == line2.endPoint.X)
                         {
-                            p1 = new XYZ((line1[0].X + line1[1].X) / 2, line2[0].Y, 0);
-                            p2 = new XYZ((line1[0].X + line1[1].X) / 2, line2[1].Y, 0); 
+                            p1 = new XYZ((line1.startPoint.X + line1.endPoint.X) / 2, line2.startPoint.Y, 0);
+                            p2 = new XYZ((line1.startPoint.X + line1.endPoint.X) / 2, line2.endPoint.Y, 0); 
                         }
                     }
 
                     if (p1 != null)
                     {
-                        RESULT.Add(new XYZ[] { p1, p2 });
+                        RESULT.Add(new LINE( p1, p2 ));
                     } 
                 } 
             }
 
             /// H-Beam Part
-            List<XYZ[]> sorted_H = H_Direction_Lines.OrderBy(e => e[0].Y).ToList();
-            List<XYZ[]>  H_Beams = new List<XYZ[]>();
+            List<LINE> sorted_H = H_Direction_Lines.OrderBy(e => e.startPoint.Y).ToList();
+            List<LINE>  H_Beams = new List<LINE>();
             int[] is_pickup = new int[sorted_H.Count()];
             for (int i = 0; i < sorted_H.Count(); i++)
             {
                 if (is_pickup[i] == 1) continue;
 
-                XYZ[] baseLine = sorted_H[i];
+                LINE baseLine = sorted_H[i];
                 for (int j = 0; j < sorted_H.Count(); j++)
                 {
                     if (j == i || is_pickup[j] == 1) continue;
 
-                    XYZ[] cmpLine = sorted_H[j];
-                    if (baseLine[0].X == cmpLine[0].X && baseLine[1].X == cmpLine[1].X)
+                    LINE cmpLine = sorted_H[j];
+                    if (baseLine.startPoint.X == cmpLine.startPoint.X && baseLine.endPoint.X == cmpLine.endPoint.X)
                     {
                         is_pickup[i] = 1;
                         is_pickup[j] = 1;
-                        XYZ p1 = new XYZ((baseLine[0].X + cmpLine[0].X) / 2, (baseLine[0].Y + cmpLine[0].Y) / 2, 0);
-                        XYZ p2 = new XYZ((baseLine[1].X + cmpLine[1].X) / 2, (baseLine[1].Y + cmpLine[1].Y) / 2, 0);
-                        H_Beams.Add(new XYZ[] { p1, p2 });
-                        RESULT.Add(new XYZ[] { p1, p2 });
+                        XYZ p1 = new XYZ((baseLine.startPoint.X + cmpLine.startPoint.X) / 2, (baseLine.startPoint.Y + cmpLine.startPoint.Y) / 2, 0);
+                        XYZ p2 = new XYZ((baseLine.endPoint.X + cmpLine.endPoint.X) / 2, (baseLine.endPoint.Y + cmpLine.endPoint.Y) / 2, 0);
+                        H_Beams.Add(new LINE ( p1, p2 ));
+                        RESULT.Add(new LINE ( p1, p2 ));
                         break;
                     }
                 }
             }
 
             /// V-Beam Part
-            List<XYZ[]>  V_Beams = new List<XYZ[]>();
-            List<XYZ[]> sorted_V = V_Direction_Lines.OrderBy(e => e[0].X).ToList();
+            List<LINE>  V_Beams = new List<LINE>();
+            List<LINE> sorted_V = V_Direction_Lines.OrderBy(e => e.startPoint.X).ToList();
             is_pickup = new int[sorted_V.Count()];
             for (int i = 0; i < sorted_V.Count(); i++)
             {
                 if (is_pickup[i] == 1) continue;
 
-                XYZ[] baseLine = sorted_V[i];
+                LINE baseLine = sorted_V[i];
                 for (int j = 0; j < sorted_V.Count(); j++)
                 {
                     if (j == i || is_pickup[j] == 1) continue;
 
-                    XYZ[] cmpLine = sorted_V[j];
-                    if (baseLine[0].Y == cmpLine[0].Y && baseLine[1].Y == cmpLine[1].Y)
+                    LINE cmpLine = sorted_V[j];
+                    if (baseLine.startPoint.Y == cmpLine.startPoint.Y && baseLine.endPoint.Y == cmpLine.endPoint.Y)
                     {
                         is_pickup[i] = 1;
                         is_pickup[j] = 1;
-                        XYZ p1 = new XYZ((baseLine[0].X + cmpLine[0].X) / 2, (baseLine[0].Y + cmpLine[0].Y) / 2, 0);
-                        XYZ p2 = new XYZ((baseLine[1].X + cmpLine[1].X) / 2, (baseLine[1].Y + cmpLine[1].Y) / 2, 0);
-                        V_Beams.Add(new XYZ[] { p1, p2 });
-                        RESULT.Add(new XYZ[] { p1, p2 });
+                        XYZ p1 = new XYZ((baseLine.startPoint.X + cmpLine.startPoint.X) / 2, (baseLine.startPoint.Y + cmpLine.startPoint.Y) / 2, 0);
+                        XYZ p2 = new XYZ((baseLine.endPoint.X + cmpLine.endPoint.X) / 2, (baseLine.endPoint.Y + cmpLine.endPoint.Y) / 2, 0);
+                        V_Beams.Add(new LINE ( p1, p2 ));
+                        RESULT.Add(new LINE ( p1, p2 ));
                         break;
                     }
                 }
@@ -392,6 +406,26 @@ namespace _6_ReadDWG
 
             return RESULT;
         }
+
+
+
+        public static  List<LINE> ColumnDrawLinesProcess(List<List<LINE>> Collect)
+        {
+
+            List<LINE> RESULT = new List<LINE>();
+            foreach (List<LINE> Lines in Collect)
+            {
+                LINE LINE1 = Lines[0];
+                LINE LINE2 = Lines[1];
+                RESULT.Add(new LINE(LINE1.startPoint,LINE1.endPoint));
+            }
+
+
+            return RESULT;
+
+        }
+
+
     }
 
 
@@ -404,21 +438,22 @@ namespace _6_ReadDWG
     public static class GeometryResult
     {
 
-        public static bool Is_Horizontal(XYZ[] line)
+        public static bool Is_Horizontal(LINE line)
         {
-            return line[0].Y == line[1].Y ? true : false;
+            return line.startPoint.Y == line.endPoint.Y ? true : false;
         }
 
-        public static bool Is_Vertical(XYZ[] line)
+        public static bool Is_Vertical(LINE line)
         {
-            return line[0].X == line[1].X ? true : false;
+            return line.startPoint.X == line.endPoint.X ? true : false;
         }
 
-        public static double Get_Length(XYZ[] Line)
+        public static double Get_Length(LINE Line)
         {
+             
             return Math.Sqrt(
-                (Line[0].X - Line[1].X) * (Line[0].X - Line[1].X) +
-                (Line[0].Y - Line[1].Y) * (Line[0].Y - Line[1].Y));
+                (Line.startPoint.X - Line.endPoint.X) * (Line.startPoint.X - Line.endPoint.X) +
+                (Line.startPoint.Y - Line.endPoint.Y) * (Line.startPoint.Y - Line.endPoint.Y));
         }
     }
 }

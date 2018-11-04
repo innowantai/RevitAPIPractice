@@ -21,7 +21,7 @@ namespace _6_ReadDWG
     {
 
         List<Level> levels;
-        Dictionary<string, List<XYZ[]>> CADLayers;
+        Dictionary<string, List<LINE>> CADLayers;
         Dictionary<string, List<FamilySymbol>> colFamilyTypes;
         Dictionary<string, List<FamilySymbol>> beamFamilyTypes;
         public List<string> returnCADLayers = new List<string>();
@@ -34,7 +34,7 @@ namespace _6_ReadDWG
         public Form1(Dictionary<string, List<FamilySymbol>> _colFamilyTypes, 
                      Dictionary<string, List<FamilySymbol>> _beamFamilyTypes, 
                      List<Level> _levels,
-                     Dictionary<string, List<XYZ[]>> _CADLayers)
+                     Dictionary<string, List<LINE>> _CADLayers)
         {
             InitializeComponent();
             this.colFamilyTypes = _colFamilyTypes;
@@ -67,7 +67,7 @@ namespace _6_ReadDWG
             this.cmbBeamBaseLevel.SelectedIndex = 0;
 
             /// 載入CAD layer名稱
-            foreach (KeyValuePair<string, List<XYZ[]>> entry in this.CADLayers)
+            foreach (KeyValuePair<string, List<LINE>> entry in this.CADLayers)
             { 
                 this.cmbColCADLayers.Items.Add(entry.Key);
                 this.cmbBeamCADLayers.Items.Add(entry.Key);
