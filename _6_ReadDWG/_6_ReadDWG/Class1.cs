@@ -63,12 +63,20 @@ namespace _6_ReadDWG
                                  out List<XYZ[]> V_Direction_Lines, 
                                  out List<XYZ[]> Else_Direction_Lines);
 
-            PreProcessing.BeamDrawLinesProcess(Collect,
-                                 H_Direction_Lines,
-                                 V_Direction_Lines,
-                                 out List<XYZ[]> H_Beams,
-                                 out List<XYZ[]> V_Beams);
+            List<XYZ[]> RES_BEAM = PreProcessing.BeamDrawLinesProcess(Collect,
+                                     H_Direction_Lines,
+                                     V_Direction_Lines );
 
+
+            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
+            List<Level> levels = RevFind.GetLevels(revitDoc);
+            Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
+            Form1 form = new Form1(colFamilyTypes, beamFamilyTypes, levels, res);
+            form.ShowDialog();
+            foreach (XYZ[] pp in RES_BEAM)
+            {
+                RevCreate.CreateBeam(form.returnType[1], levels[0], pp); 
+            }
 
             return Result.Succeeded;
         }

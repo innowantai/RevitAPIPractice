@@ -281,11 +281,9 @@ namespace _6_ReadDWG
         /// <param name="V_Direction_Lines"></param>
         /// <param name="H_Beams"></param>
         /// <param name="V_Beams"></param>
-        public static void BeamDrawLinesProcess(List<List<XYZ[]>> Collect,
+        public static List<XYZ[]> BeamDrawLinesProcess(List<List<XYZ[]>> Collect,
                                                 List<XYZ[]> H_Direction_Lines,
-                                                List<XYZ[]> V_Direction_Lines,
-                                                out List<XYZ[]> H_Beams,
-                                                out List<XYZ[]> V_Beams)
+                                                List<XYZ[]> V_Direction_Lines)
         {
             List<XYZ[]> RESULT = new List<XYZ[]>();
 
@@ -339,7 +337,7 @@ namespace _6_ReadDWG
 
             /// H-Beam Part
             List<XYZ[]> sorted_H = H_Direction_Lines.OrderBy(e => e[0].Y).ToList();
-            H_Beams = new List<XYZ[]>();
+            List<XYZ[]>  H_Beams = new List<XYZ[]>();
             int[] is_pickup = new int[sorted_H.Count()];
             for (int i = 0; i < sorted_H.Count(); i++)
             {
@@ -365,7 +363,7 @@ namespace _6_ReadDWG
             }
 
             /// V-Beam Part
-            V_Beams = new List<XYZ[]>();
+            List<XYZ[]>  V_Beams = new List<XYZ[]>();
             List<XYZ[]> sorted_V = V_Direction_Lines.OrderBy(e => e[0].X).ToList();
             is_pickup = new int[sorted_V.Count()];
             for (int i = 0; i < sorted_V.Count(); i++)
@@ -392,7 +390,7 @@ namespace _6_ReadDWG
             }
 
 
-
+            return RESULT;
         }
     }
 
