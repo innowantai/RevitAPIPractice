@@ -14,6 +14,7 @@ using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.UI.Selection;
 
 /// <summary>
+/// 2018/11/17
 /// The targets will be solved :
 /// 1. If the family instance was not be used, that will appear the message of "familySymbol is not activate" 
 ///    Solved : Create the Transaction to active indiacted FamilySymbol before use it 
@@ -32,7 +33,7 @@ namespace _6_ReadDWG
         public static Document revitDoc;
         public static string startPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         public FindRevitElements RevFind = new FindRevitElements();
-        public CreateObjects RevCreate;
+
 
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -40,7 +41,6 @@ namespace _6_ReadDWG
             string getPath = Path.Combine(startPath, "CAD_REVIT_DATA");
             revitDoc = commandData.Application.ActiveUIDocument.Document;
             uidoc = commandData.Application.ActiveUIDocument;
-
             ElementId ele = null;
             Selection selection = uidoc.Selection;
             ICollection<ElementId> element = selection.GetElementIds();
@@ -50,72 +50,192 @@ namespace _6_ReadDWG
                 break;
             }
 
-            RevCreate = new CreateObjects(revitDoc);
-            
 
-            Dictionary<string, List<LINE>> res = GeneralCAD(uidoc);
-            Main_API();
+            //CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+            //Creation.Main_Create(revitDoc, uidoc);
 
-            //Dictionary<string, List<LINE>> CADGeometry = null;
-            //CADGeometry = GeneralCAD(uidoc);
-            //List<LINE> LINES = CADGeometry["牆"];
-            //PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
-            //                     out List<LINE> H_Direction_Lines,
-            //                     out List<LINE> V_Direction_Lines,
-            //                     out List<LINE> Else_Direction_Lines);
+
+
+            List<Level> levels = RevFind.GetLevels(revitDoc);
+            List<List<LINE>> BeamGroup = GetBeamGroup(levels[0]);
+            List<List<LINE>> NewBeamGroup = new List<List<LINE>>();
+            foreach (List<LINE> Beams in BeamGroup)
+            {
+                double sumOfX = Beams.Sum(item => item.startPoint.X);
+                double sumOfY = Beams.Sum(item => item.startPoint.Y);
+                XYZ tarPoint = new XYZ(sumOfX / Beams.Count, sumOfY / Beams.Count, 0);
+                List<LINE> tmpBeams = new List<LINE>();
+                foreach (LINE beam in Beams)
+                {
+                    double width = Convert.ToDouble(beam.Name.Split('x')[0].Trim()) / 304.8;
+                    tmpBeams.Add(beam.GetShiftLines(tarPoint, width, "IN")[0]);
+                }
+                NewBeamGroup.Add(tmpBeams);
+            }
+             
+
+            foreach (List<LINE> Beams in NewBeamGroup)
+            { 
+                for (int i = 0; i < Beams.Count; i++)
+                {
+                    LINE L1 = Beams[i];
+                    LINE L2 = i + 1 == Beams.Count ? Beams[0] : Beams[i + 1];
+                    L1.endPoint = GetCrossPoint(L1, L2);
+                    Beams[i].endPoint = GetCrossPoint(L1, L2);
+                    if (i + 1 == Beams.Count)
+                    {
+                        Beams[0].startPoint = GetCrossPoint(L1, L2); 
+                    }
+                    else
+                    { 
+                        Beams[i + 1].startPoint = GetCrossPoint(L1, L2);
+                    }
+                }
+            }
 
             return Result.Succeeded;
         }
 
-
-
-
-
-        private void Main_API()
+        private XYZ GetCrossPoint(LINE line1, LINE line2)
         {
-            Dictionary<string, List<LINE>> CADGeometry = null;
-            CADGeometry = GeneralCAD(uidoc);
-            if (CADGeometry == null) return; 
-
-            Dictionary<string, List<FamilySymbol>> colFamilyTypes = RevFind.GetDocColumnsTypes(revitDoc);
-            Dictionary<string, List<FamilySymbol>> beamFamilyTypes = RevFind.GetDocBeamTypes(revitDoc);
-            List<Level> levels = RevFind.GetLevels(revitDoc);
-            Form1 Form = new Form1(colFamilyTypes, beamFamilyTypes, levels, CADGeometry);
-            Form.ShowDialog(); 
-            if (Form.DialogResult == System.Windows.Forms.DialogResult.OK)
+            if (line1.GetSlope() == line2.GetSlope())
             {
-                if (Form.chCol.Checked)
-                {
-                    int CaseIndex = 0;
-                    List<LINE> LINES = CADGeometry[Form.cmbColCADLayers.Text];
-                    PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
-                                         out List<LINE> H_Direction_Lines,
-                                         out List<LINE> V_Direction_Lines,
-                                         out List<LINE> Else_Direction_Lines); 
-                    List<LINE> RES_COLUMN = PreProcessing.GetColumnDrawCenterPoints(Collect);
-                    foreach (LINE pp in RES_COLUMN)
-                    {
-                        RevCreate.CreateColumn(Form.returnType[CaseIndex], Form.returnBaseLevel[CaseIndex], Form.returnTopLevel[CaseIndex], pp);
-                    }
-                }
-
-                if (Form.chBeam.Checked)
-                {
-                    int CaseIndex = 1; 
-                    List<LINE> LINES = CADGeometry[Form.cmbBeamCADLayers.Text];
-                    PreProcessing.ClassifyLines(LINES, out List<List<LINE>> Collect,
-                                         out List<LINE> H_Direction_Lines,
-                                         out List<LINE> V_Direction_Lines,
-                                         out List<LINE> Else_Direction_Lines);
-                    List<LINE> RES_BEAM = PreProcessing.GetBeamDrawLines(Collect, H_Direction_Lines, V_Direction_Lines); 
-
-                    foreach (LINE pp in RES_BEAM)
-                    {
-                        RevCreate.CreateBeam(Form.returnType[CaseIndex], Form.returnBaseLevel[CaseIndex], pp);
-                    }
-                }
-
+                return line1.endPoint;
             }
+
+            MATRIX m1 = new MATRIX(new double[,] { { line1.Direction.X, -line2.Direction.X },
+                                                    {line1.Direction.Y, -line2.Direction.Y } });
+            MATRIX m2 = new MATRIX(new double[,] { { line2.OriPoint.X - line1.OriPoint.X }, { line2.OriPoint.Y - line1.OriPoint.Y } });
+
+
+            MATRIX m3 = m1.InverseMatrix();
+            MATRIX res = m3.CrossMatrix(m2);
+
+            double[,] tt = res.Matrix;
+            double newX = line1.OriPoint.X + line1.Direction.X * tt[0, 0];
+            double newY = line1.OriPoint.Y + line1.Direction.Y * tt[0, 0];
+
+
+            return new XYZ(newX, newY, 0);
+
+        }
+
+        private List<List<LINE>> GetBeamGroup(Level targetLevel)
+        {
+            List<LINE> BEAMS = GetTargetFloorBeams(targetLevel);
+
+            int[] count = new int[BEAMS.Count];
+            Dictionary<string, List<int>> pickNumbers = new Dictionary<string, List<int>>();
+            Dictionary<string, List<LINE>> DictRes = new Dictionary<string, List<LINE>>();
+            for (int i = 0; i < BEAMS.Count; i++)
+            {
+                bool open = true;
+                List<LINE> Res = new List<LINE>() { BEAMS[i] };
+                List<int> checkPicked = new List<int>() { i };
+                while (open)
+                {
+                    int j = 0;
+                    List<LINE> tmpRes = new List<LINE>(); tmpRes = Res.ToList();
+                    List<int> tmpCheckPicked = new List<int>();
+                    while (j < BEAMS.Count)
+                    {
+                        if (!checkPicked.Contains(j))
+                        {
+                            if (CMPPoints(Res[Res.Count - 1].endPoint, BEAMS[j].startPoint, 1000 / 304.8))
+                            {
+                                tmpRes.Add(BEAMS[j]);
+                                tmpCheckPicked.Add(j);
+                            }
+                            else if (CMPPoints(Res[Res.Count - 1].endPoint, BEAMS[j].endPoint, 1000 / 304.8))
+                            {
+                                tmpRes.Add(new LINE(BEAMS[j].endPoint, BEAMS[j].startPoint, BEAMS[j].Name));
+                                tmpCheckPicked.Add(j);
+                            }
+                        }
+                        j++;
+                    }
+
+                    if (tmpRes.Count != Res.Count)
+                    {
+                        LINE tmp = tmpRes[0];
+                        List<double> diff = new List<double>();
+                        for (int ii = Res.Count; ii < tmpRes.Count; ii++)
+                        {
+                            diff.Add(new LINE(tmp.startPoint, tmpRes[ii].endPoint).GetLength());
+                        }
+                        int po = diff.FindIndex(item => item.Equals(diff.Min()));
+                        checkPicked.Add(tmpCheckPicked[po]);
+                        Res.Add(tmpRes[Res.Count + po]);
+                        tmpCheckPicked.Clear();
+                        if (diff.Min() < 1000 / 304.8)
+                        {
+                            open = false;
+                        }
+                    }
+                    else
+                    {
+                        open = false;
+                    }
+                }
+                pickNumbers[BEAMS[i].Name] = checkPicked;
+                DictRes[BEAMS[i].Name] = Res;
+            }
+
+
+            ////// Filter Groups
+            List<int> sumOf = new List<int>();
+            List<string> keys = pickNumbers.Keys.ToList();
+            foreach (KeyValuePair<string, List<int>> item in pickNumbers)
+            {
+                sumOf.Add(item.Value.Sum());
+            }
+
+            int[] flag = new int[sumOf.Count];
+            for (int i = 0; i < sumOf.Count; i++)
+            {
+                if (flag[i] == -1) continue;
+                for (int j = 0; j < sumOf.Count; j++)
+                {
+                    List<LINE> tmpBeams = DictRes[keys[j]];
+                    if (i != j && sumOf[i] == sumOf[j])
+                    {
+                        flag[j] = -1;
+                    }
+                    else if ((new LINE(tmpBeams[0].startPoint, tmpBeams[tmpBeams.Count - 1].endPoint)).GetLength() > 1000 / 304.8)
+                    {
+                        flag[j] = -1;
+                    }
+                }
+            }
+            List<int> Flag = flag.ToList();
+            int[] lastPo = FindAllIndexof(Flag, 0);
+
+            Dictionary<string, List<LINE>> DictResult = new Dictionary<string, List<LINE>>();
+            List<List<LINE>> RESULT = new List<List<LINE>>();
+            foreach (int pp in lastPo)
+            {
+                DictResult[keys[pp]] = DictRes[keys[pp]];
+                RESULT.Add(DictRes[keys[pp]]);
+            }
+            return RESULT;
+        }
+
+
+        public static int[] FindAllIndexof<T>(IEnumerable<T> values, T val)
+        {
+            return values.Select((b, i) => Equals(b, val) ? i : -1).Where(i => i != -1).ToArray();
+        }
+
+        /// <summary>
+        /// 比較兩點距離是否小於diff
+        /// </summary>
+        /// <param name="point1"></param>
+        /// <param name="point2"></param>
+        /// <param name="diff"></param>
+        /// <returns></returns>
+        private bool CMPPoints(XYZ point1, XYZ point2, double diff)
+        {
+            return (new LINE(point1, point2)).GetLength() <= diff ? true : false;
         }
 
 
@@ -124,204 +244,50 @@ namespace _6_ReadDWG
 
 
         /// <summary>
-        /// Pick a DWG import instance, extract polylines 
-        /// from it visible in the current view and create
-        /// filled regions from them.
+        /// Get Beams for indicated floor
         /// </summary>
-        public Dictionary<string, List<LINE>> GeneralCAD(UIDocument uidoc)
+        /// <param name="targetLevel_"></param>
+        /// <returns></returns>
+        private List<LINE> GetTargetFloorBeams(Level targetLevel_)
         {
-            Document doc = uidoc.Document;
-            View active_view = doc.ActiveView;
-            List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
+            double targetLevel = targetLevel_.Elevation;
+            List<LINE> BEAMS = GetBeamsForIndicatedFloor();
 
-            // Pick Import Instance 
-            Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
-            var import = doc.GetElement(r) as ImportInstance;
+            var beams = from bb in BEAMS
+                        where bb.startPoint.Z == targetLevel
+                        select bb;
 
-            // Get Geometry 
-            var ge = import.get_Geometry(new Options());
-            foreach (var go in ge)
-            {
-                if (go is GeometryInstance)
-                {
-                    var gi = go as GeometryInstance;
-                    var ge2 = gi.GetInstanceGeometry();
-                    if (ge2 != null)
-                    {
-                        foreach (var obj in ge2)
-                        {
-                            // Only work on PolyLines 
-                            if (obj is PolyLine | obj is Arc | obj is Line)
-                            {
-
-                                // Use the GraphicsStyle to get the 
-                                // DWG layer linked to the Category 
-                                // for visibility.
-
-                                var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                                // Check if the layer is visible in the view.
-
-                                if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
-                                {
-                                    visible_dwg_geo.Add(obj);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            // Do something with the info 
-            Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
-            if (visible_dwg_geo.Count > 0)
-            {
-                // Retrieve first filled region type 
-                var filledType = new FilteredElementCollector(doc)
-                  .WhereElementIsElementType()
-                  .OfClass(typeof(FilledRegionType))
-                  .OfType<FilledRegionType>()
-                  .First();
-
-                using (var t = new Transaction(doc))
-                {
-                    t.Start("ProcessDWG");
-                    List<LINE> tmp = new List<LINE>();
-                    foreach (var obj in visible_dwg_geo)
-                    {
-                        var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                        string layerName = gStyle.GraphicsStyleCategory.Name;
-
-                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
-                        if (obj is PolyLine)
-                        {
-                            // Create loops for detail region 
-                            var poly = obj as PolyLine;
-                            var points = poly.GetCoordinates();
-                            for (int kk = 0; kk < points.Count - 1; kk++)
-                            {
-                                tmp.Add(new LINE(points[kk], points[kk + 1]));
-                            }
-                        }
-                        else if (obj is Line)
-                        {
-                            var line = obj as Line;
-                            tmp.Add(new LINE(line.GetEndPoint(0),
-                                                 line.GetEndPoint(1)));
-                        }
-                        //else if (obj is Arc)
-                        //{
-                        //    var Arc = obj as Arc;
-                        //    pp[0] = Arc.Center;
-                        //    pp[1] = Arc.Center;
-                        //} 
-                        res[layerName] = tmp;
-                    }
-                }
-            }
-
-            return res;
+            return beams.ToList();
         }
-
-
-
-
 
         /// <summary>
-        /// Pick a DWG import instance, extract polylines 
-        /// from it visible in the current view and create
-        /// filled regions from them.
+        /// Get All Beams
         /// </summary>
-        public Dictionary<string, List<LINE>> ProcessVisible(UIDocument uidoc)
+        /// <returns></returns>
+        private List<LINE> GetBeamsForIndicatedFloor()
         {
-            Document doc = uidoc.Document;
-            View active_view = doc.ActiveView;
-            List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
-
-            // Pick Import Instance 
-            Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
-            var import = doc.GetElement(r) as ImportInstance;
-
-            // Get Geometry 
-            var ge = import.get_Geometry(new Options());
-            foreach (var go in ge)
+            FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
+            collector.OfCategory(BuiltInCategory.OST_StructuralFraming);
+            collector.OfClass(typeof(FamilyInstance));
+            IList<Element> beams = collector.ToElements();
+            List<LINE> Beams = new List<LINE>();
+            foreach (Element beam in beams)
             {
-                if (go is GeometryInstance)
-                {
-                    var gi = go as GeometryInstance;
-                    var ge2 = gi.GetInstanceGeometry();
-                    if (ge2 != null)
-                    {
-                        foreach (var obj in ge2)
-                        {
-                            // Only work on PolyLines 
-                            if (obj is PolyLine | obj is Arc | obj is Line)
-                            {
+                LocationCurve Locurve = beam.Location as LocationCurve;
+                Line line = Locurve.Curve as Line;
+                LINE LINE = new LINE(line.Origin, new XYZ(line.Origin.X + line.Length * line.Direction.X,
+                                                          line.Origin.Y + line.Length * line.Direction.Y,
+                                                          line.Origin.Z + line.Length * line.Direction.Z));
 
-                                // Use the GraphicsStyle to get the 
-                                // DWG layer linked to the Category 
-                                // for visibility.
-
-                                var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                                // Check if the layer is visible in the view.
-
-                                if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
-                                {
-                                    visible_dwg_geo.Add(obj);
-                                }
-                            }
-                        }
-                    }
-                }
+                LINE.Name = beam.Name;
+                Beams.Add(LINE);
             }
 
-            // Do something with the info 
-            Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
-            if (visible_dwg_geo.Count > 0)
-            {
-                // Retrieve first filled region type 
-                var filledType = new FilteredElementCollector(doc)
-                  .WhereElementIsElementType()
-                  .OfClass(typeof(FilledRegionType))
-                  .OfType<FilledRegionType>()
-                  .First();
 
-                using (var t = new Transaction(doc))
-                {
-                    t.Start("ProcessDWG");
-                    List<LINE> tmp = new List<LINE>();
-                    foreach (var obj in visible_dwg_geo)
-                    {
-                        var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                        string layerName = gStyle.GraphicsStyleCategory.Name;
-                        LINE pp = null;
-                        if (obj is PolyLine)
-                        {
-                            // Create loops for detail region 
-                            var poly = obj as PolyLine;
-                            var points = poly.GetCoordinates(); 
-                            pp = new LINE(points[0], points[2]);
 
-                        }
-                        else if (obj is Arc)
-                        {
-                            var Arc = obj as Arc; 
-                            pp = new LINE(Arc.Center, Arc.Center);
-                        }
-                        else if (obj is Line)
-                        {
-                            var line = obj as Line; 
-                            pp = new LINE(line.GetEndPoint(0), line.GetEndPoint(1));
-                        }
-                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
-                        tmp.Add(pp);
-                        res[layerName] = tmp;
-                    }
-                }
-            }
-
-            return res;
+            return Beams;
         }
+
 
 
 

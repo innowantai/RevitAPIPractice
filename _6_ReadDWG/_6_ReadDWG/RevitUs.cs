@@ -27,19 +27,148 @@ namespace _6_ReadDWG
     {
         public XYZ startPoint { get; set; }
         public XYZ endPoint { get; set; }
+        public string Name { get; set; }
+        public double Slope { get; set; }
+        public double c { get; set; }
+        public XYZ OriPoint { get; set; }
+        public XYZ Direction { get; set; }
         public LINE(XYZ _startPoint, XYZ _endPoint)
         {
             this.startPoint = _startPoint;
-            this.endPoint = _endPoint; 
+            this.endPoint = _endPoint;
+            this.Name = "";
+            this.Slope = this.GetSlope();
+            this.c = this.Slope == -1 ? 0 : this.startPoint.Y - this.Slope * this.startPoint.X;
+            GetParaMeters();
+        }
+        public LINE(XYZ _startPoint, XYZ _endPoint, string NAME)
+        {
+            this.startPoint = _startPoint;
+            this.endPoint = _endPoint;
+            this.Name = NAME;
+            GetParaMeters();
+        }
+
+        public void GetParaMeters()
+        {
+            double dx = this.endPoint.X - this.startPoint.X;
+            double dy = this.endPoint.Y - this.startPoint.Y;
+            double dz = this.endPoint.Z - this.startPoint.Z;
+            this.OriPoint = new XYZ(this.startPoint.X, this.startPoint.Y, this.startPoint.Z);
+            this.Direction = new XYZ(dx / this.GetLength(), dy / this.GetLength(), 0);
+        }
+
+
+        public List<LINE> GetShiftLines(XYZ point, double DD, string CASE)
+        {
+            LINE[] lines = GetShiftLines(DD);
+            double LL1 = lines[0].GetDistanceFromPoint(point);
+            double LL2 = lines[1].GetDistanceFromPoint(point);
+            Dictionary<string, List<LINE>> allCase = new Dictionary<string, List<LINE>>();
+            allCase["IN"] = LL1 > LL2 ? new List<LINE> { lines[1] } : new List<LINE> { lines[0] };
+            allCase["OUT"] = LL1 > LL2 ? new List<LINE> { lines[0] } : new List<LINE> { lines[1] };
+            allCase["BOTH"] = lines.ToList();
+
+
+            return allCase[CASE];
+
+        }
+
+
+        public LINE[] GetShiftLines(double DD)
+        {
+            if (this.Slope == -1)
+            {
+                LINE line1 = new LINE(new XYZ(this.startPoint.X + DD, this.startPoint.Y, this.startPoint.Z),
+                                      new XYZ(this.endPoint.X + DD, this.endPoint.Y, this.endPoint.Z));
+                LINE line2 = new LINE(new XYZ(this.startPoint.X - DD, this.startPoint.Y, this.startPoint.Z),
+                                      new XYZ(this.endPoint.X - DD, this.endPoint.Y, this.endPoint.Z));
+                return new LINE[] { line1, line2 };
+            }
+            else if (this.Slope == 0)
+            {
+                LINE line1 = new LINE(new XYZ(this.startPoint.X, this.startPoint.Y + DD, this.startPoint.Z),
+                                      new XYZ(this.endPoint.X, this.endPoint.Y + DD, this.endPoint.Z));
+                LINE line2 = new LINE(new XYZ(this.startPoint.X, this.startPoint.Y - DD, this.startPoint.Z),
+                                      new XYZ(this.endPoint.X, this.endPoint.Y - DD, this.endPoint.Z));
+                return new LINE[] { line1, line2 };
+            }
+            else
+            {
+                double _m = -1 / this.Slope;
+                double tmpData = DD / Math.Sqrt(_m * _m + 1);
+                double newX1 = this.startPoint.X + tmpData;
+                double newY1 = this.startPoint.Y + _m * tmpData;
+                double newX2 = this.startPoint.X - tmpData;
+                double newY2 = this.startPoint.Y - _m * tmpData;
+
+                XYZ newStartPoint1 = new XYZ(newX1, newY1, 0);
+                XYZ newStartPoint2 = new XYZ(newX2, newY2, 0);
+                return new LINE[2] { getNewLine(newStartPoint1), getNewLine(newStartPoint2) };
+            }
+        }
+
+
+        private double GetDistanceFromPoint(XYZ targetPoint)
+        {
+            double m = this.Slope;
+            double b = this.startPoint.Y - m * this.startPoint.X;
+            double res = m == -1 ? Math.Abs(targetPoint.X - b) :
+                                   Math.Abs(m * targetPoint.X - targetPoint.Y + b) / Math.Sqrt(m * m + 1);
+            return res;
+        }
+
+        private LINE getNewLine(XYZ point)
+        {
+            double m = this.Slope;
+            double tmpData = 1 / Math.Sqrt(m * m + 1);
+            double newX2 = point.X + this.GetLength() * tmpData;
+            double newY2 = point.Y + m * this.GetLength() * tmpData;
+            return new LINE(point, new XYZ(newX2, newY2, 0));
         }
 
         public double GetSlope()
-        { 
-            return (this.startPoint.Y-this.endPoint.Y)/(this.startPoint.X - this.endPoint.X); 
+        {
+            double Slope = 0;
+            if (this.startPoint.Y == this.endPoint.Y)
+            {
+                Slope = 0;
+            }
+            else if (this.startPoint.X == this.endPoint.X)
+            {
+                Slope = -1;
+            }
+            else
+            {
+                Slope = (this.startPoint.Y - this.endPoint.Y) / (this.startPoint.X - this.endPoint.X);
+            }
+            return Slope;
+        }
+
+        public double GetLength()
+        {
+            return Math.Sqrt(
+                (this.startPoint.X - this.endPoint.X) * (this.startPoint.X - this.endPoint.X) +
+                (this.startPoint.Y - this.endPoint.Y) * (this.startPoint.Y - this.endPoint.Y) +
+                (this.startPoint.Z - this.endPoint.Z) * (this.startPoint.Z - this.endPoint.Z)
+                );
+        }
+
+        public double getSumOfCoordinate()
+        {
+            return this.startPoint.X + this.startPoint.Y + this.startPoint.Z + this.endPoint.X + this.endPoint.Y + this.endPoint.Z;
         }
 
 
+        public string ShowPoint()
+        {
+            string startPoint = "(" + this.startPoint.X.ToString() + " , " + this.startPoint.Y.ToString() + " , " + this.startPoint.Z.ToString() + ")";
+            string endPoint = "(" + this.endPoint.X.ToString() + " , " + this.endPoint.Y.ToString() + " , " + this.endPoint.Z.ToString() + ")";
+            return startPoint + "   " + endPoint;
+        }
+
     }
+
 
 
 
@@ -116,6 +245,8 @@ namespace _6_ReadDWG
                 XYZ p1 = new XYZ(points.startPoint.X, points.startPoint.Y, baseLevel.Elevation);
                 XYZ p2 = new XYZ(points.endPoint.X, points.endPoint.Y, baseLevel.Elevation);
                 familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(p1, p2), Type, baseLevel, StructuralType.Beam);
+                
+
                 trans.Commit();
             }
         }

@@ -46,6 +46,7 @@
             this.chBeam = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.chPlate = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.SuspendLayout();
@@ -240,11 +241,23 @@
             this.groupBox2.TabIndex = 21;
             this.groupBox2.TabStop = false;
             // 
+            // chPlate
+            // 
+            this.chPlate.AutoSize = true;
+            this.chPlate.Font = new System.Drawing.Font("微軟正黑體", 14F);
+            this.chPlate.Location = new System.Drawing.Point(664, 33);
+            this.chPlate.Name = "chPlate";
+            this.chPlate.Size = new System.Drawing.Size(86, 28);
+            this.chPlate.TabIndex = 22;
+            this.chPlate.Text = "建立版";
+            this.chPlate.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.chPlate);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.chBeam);
@@ -283,5 +296,6 @@
         public System.Windows.Forms.CheckBox chBeam;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.GroupBox groupBox2;
+        public System.Windows.Forms.CheckBox chPlate;
     }
 }

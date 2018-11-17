@@ -112,7 +112,7 @@ namespace _6_ReadDWG
             returnType.Add(colFamilyTypes[cmbColFamilyType.Text][cmbColType.SelectedIndex]);
             returnType.Add(beamFamilyTypes[cmbBeamFamilyType.Text][cmbBeamType.SelectedIndex]);
             returnBaseLevel.Add(levels[cmbColBaseLevel.SelectedIndex]);
-            returnBaseLevel.Add(levels[cmbBeamBaseLevel.SelectedIndex]);
+            returnBaseLevel.Add(levels[cmbBeamBaseLevel.SelectedIndex]); 
             returnTopLevel.Add(levels[cmbColTopLevel.SelectedIndex]); 
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.Close();
