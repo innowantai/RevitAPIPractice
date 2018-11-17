@@ -51,13 +51,14 @@ namespace _6_ReadDWG
             }
 
 
-            //CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-            //Creation.Main_Create(revitDoc, uidoc);
+            CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+            Creation.Main_Create(revitDoc, uidoc);
 
 
 
             List<Level> levels = RevFind.GetLevels(revitDoc);
-            List<List<LINE>> BeamGroup = GetBeamGroup(levels[0]);
+            Level targetLevel = levels[0];
+            List<List<LINE>> BeamGroup = GetBeamGroup(targetLevel);
             List<List<LINE>> NewBeamGroup = new List<List<LINE>>();
             foreach (List<LINE> Beams in BeamGroup)
             {
@@ -67,15 +68,15 @@ namespace _6_ReadDWG
                 List<LINE> tmpBeams = new List<LINE>();
                 foreach (LINE beam in Beams)
                 {
-                    double width = Convert.ToDouble(beam.Name.Split('x')[0].Trim()) / 304.8;
+                    double width = Convert.ToDouble(beam.Name.Split('x')[0].Trim()) / 304.8 / 2; 
                     tmpBeams.Add(beam.GetShiftLines(tarPoint, width, "IN")[0]);
                 }
                 NewBeamGroup.Add(tmpBeams);
             }
-             
+
 
             foreach (List<LINE> Beams in NewBeamGroup)
-            { 
+            {
                 for (int i = 0; i < Beams.Count; i++)
                 {
                     LINE L1 = Beams[i];
@@ -84,12 +85,40 @@ namespace _6_ReadDWG
                     Beams[i].endPoint = GetCrossPoint(L1, L2);
                     if (i + 1 == Beams.Count)
                     {
-                        Beams[0].startPoint = GetCrossPoint(L1, L2); 
+                        Beams[0].startPoint = GetCrossPoint(L1, L2);
                     }
                     else
-                    { 
+                    {
                         Beams[i + 1].startPoint = GetCrossPoint(L1, L2);
                     }
+                }
+            }
+
+            List<CurveArray> floorCurves = new List<CurveArray>();
+            foreach (List<LINE> Beams in NewBeamGroup)
+            {
+                CurveArray curveArray = new CurveArray();
+                foreach (LINE beam in Beams)
+                {
+                    curveArray.Append(Line.CreateBound(beam.startPoint, beam.endPoint));
+                }
+                floorCurves.Add(curveArray);
+            }
+
+
+
+            FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
+            collector.OfCategory(BuiltInCategory.OST_Floors);
+            var floorTypes = collector.ToList();
+
+
+            foreach (CurveArray curveArray in floorCurves)
+            {
+                using (Transaction trans = new Transaction(revitDoc))
+                {
+                    trans.Start("Create Floors");
+                    revitDoc.Create.NewFloor(curveArray, floorTypes[0] as FloorType, levels[1], false);
+                    trans.Commit();
                 }
             }
 
@@ -98,7 +127,8 @@ namespace _6_ReadDWG
 
         private XYZ GetCrossPoint(LINE line1, LINE line2)
         {
-            if (line1.GetSlope() == line2.GetSlope())
+            
+            if (Math.Round(line1.GetSlope(), 3) == Math.Round(line2.GetSlope(), 3))
             {
                 return line1.endPoint;
             }
@@ -177,8 +207,8 @@ namespace _6_ReadDWG
                         open = false;
                     }
                 }
-                pickNumbers[BEAMS[i].Name] = checkPicked;
-                DictRes[BEAMS[i].Name] = Res;
+                pickNumbers[i.ToString()] = checkPicked;
+                DictRes[i.ToString()] = Res;
             }
 
 

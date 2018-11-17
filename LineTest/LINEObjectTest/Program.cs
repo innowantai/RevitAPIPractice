@@ -186,6 +186,8 @@ namespace LINEObjectTest
             this.startPoint = _startPoint;
             this.endPoint = _endPoint;
             this.Name = NAME;
+            this.Slope = this.GetSlope();
+            this.c = this.Slope == -1 ? 0 : this.startPoint.Y - this.Slope * this.startPoint.X;
             GetParaMeters();
         }
 
@@ -253,7 +255,7 @@ namespace LINEObjectTest
         {
             double m = this.Slope;
             double b = this.startPoint.Y - m * this.startPoint.X;
-            double res = m == -1 ? Math.Abs(targetPoint.X - b) :
+            double res = m == -1 ? Math.Abs(targetPoint.X - this.startPoint.X) :
                                    Math.Abs(m * targetPoint.X - targetPoint.Y + b) / Math.Sqrt(m * m + 1);
             return res;
         }
