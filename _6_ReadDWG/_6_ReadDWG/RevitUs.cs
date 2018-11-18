@@ -568,7 +568,7 @@ namespace _6_ReadDWG
             {
                 LINE LINE1 = Lines[0];
                 LINE LINE2 = Lines[1];
-                RESULT.Add(new LINE(LINE1.startPoint,LINE1.endPoint));
+                RESULT.Add(new LINE(LINE1.startPoint,LINE2.endPoint));
             }
 
 

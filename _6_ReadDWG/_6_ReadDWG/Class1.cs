@@ -19,7 +19,11 @@ using Autodesk.Revit.UI.Selection;
 /// 1. If the family instance was not be used, that will appear the message of "familySymbol is not activate" 
 ///    Solved : Create the Transaction to active indiacted FamilySymbol before use it 
 /// 2. Need to get the LevelId of the GeometryInstance
-///    Solved : will be ------
+///    Solved : Beams LevelId have been got by compare with the value of Location of z
+/// 3. Automatically Create floors by beam                                                       
+///    will do : find the outline of the columne to open floor                                        ((2018/11/18
+/// 4. Above Case all for H and V direction only 
+/// 
 /// </summary>
 
 
@@ -56,6 +60,16 @@ namespace _6_ReadDWG
 
 
 
+            
+
+            return Result.Succeeded;
+        }
+
+
+
+
+        public void CreateFloors()
+        {
             List<Level> levels = RevFind.GetLevels(revitDoc);
             Level targetLevel = levels[0];
             List<List<LINE>> BeamGroup = GetBeamGroup(targetLevel);
@@ -68,7 +82,7 @@ namespace _6_ReadDWG
                 List<LINE> tmpBeams = new List<LINE>();
                 foreach (LINE beam in Beams)
                 {
-                    double width = Convert.ToDouble(beam.Name.Split('x')[0].Trim()) / 304.8 / 2; 
+                    double width = Convert.ToDouble(beam.Name.Split('x')[0].Trim()) / 304.8 / 2;
                     tmpBeams.Add(beam.GetShiftLines(tarPoint, width, "IN")[0]);
                 }
                 NewBeamGroup.Add(tmpBeams);
@@ -122,8 +136,9 @@ namespace _6_ReadDWG
                 }
             }
 
-            return Result.Succeeded;
         }
+
+
 
         private XYZ GetCrossPoint(LINE line1, LINE line2)
         {
