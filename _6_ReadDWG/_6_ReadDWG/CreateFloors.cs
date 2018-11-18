@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -12,65 +10,20 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.UI.Selection;
-
-/// <summary>
-/// 2018/11/17
-/// The targets will be solved :
-/// 1. If the family instance was not be used, that will appear the message of "familySymbol is not activate" 
-///    Solved : Create the Transaction to active indiacted FamilySymbol before use it 
-/// 2. Need to get the LevelId of the GeometryInstance
-///    Solved : Beams LevelId have been got by compare with the value of Location of z
-/// 3. Automatically Create floors by beam                                                       
-///    will do : find the outline of the columne to open floor                                        ((2018/11/18
-/// 4. Above Case all for H and V direction only 
-/// 5. 樓板建立all case有些問題
-/// </summary>
-
-
 namespace _6_ReadDWG
 {
-    [Transaction(TransactionMode.Manual)]
-    public class Class1 : IExternalCommand
-    {
-        public Application revitApp;
-        public UIDocument uidoc;
-        public static Document revitDoc;
-        public static string startPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        public FindRevitElements RevFind = new FindRevitElements();
+    class CreateFloors
+    { 
+        private Document revitDoc;
 
-
-        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        public CreateFloors(Document revitDoc_)
         {
-
-            string getPath = Path.Combine(startPath, "CAD_REVIT_DATA");
-            revitDoc = commandData.Application.ActiveUIDocument.Document;
-            uidoc = commandData.Application.ActiveUIDocument;
-            ElementId ele = null;
-            Selection selection = uidoc.Selection;
-            ICollection<ElementId> element = selection.GetElementIds();
-            foreach (ElementId eleID in element)
-            {
-                ele = eleID;
-                break;
-            }
-
-
-            CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-            Creation.Main_Create(revitDoc, uidoc);
-
-
-
-            
-
-            return Result.Succeeded;
+            this.revitDoc = revitDoc_;
         }
 
 
-
-
-        public void CreateFloors(Level targetLevel)
-        {
-            List<Level> levels = RevFind.GetLevels(revitDoc); 
+        public void CreateFloor(Level targetLevel)
+        { 
             List<List<LINE>> BeamGroup = GetBeamGroup(targetLevel);
             List<List<LINE>> NewBeamGroup = new List<List<LINE>>();
             foreach (List<LINE> Beams in BeamGroup)
@@ -125,15 +78,24 @@ namespace _6_ReadDWG
             var floorTypes = collector.ToList();
 
 
+
+            
+           
             foreach (CurveArray curveArray in floorCurves)
             {
                 using (Transaction trans = new Transaction(revitDoc))
                 {
+                    FailureHandlingOptions failureHandlingOptions = trans.GetFailureHandlingOptions();
+                    FailureHandler failureHandler = new FailureHandler();
+                    failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
+                    failureHandlingOptions.SetClearAfterRollback(false);
+                    trans.SetFailureHandlingOptions(failureHandlingOptions);
                     trans.Start("Create Floors");
-                    revitDoc.Create.NewFloor(curveArray, floorTypes[0] as FloorType, levels[1], false);
+                    revitDoc.Create.NewFloor(curveArray, floorTypes[0] as FloorType, targetLevel, false);
                     trans.Commit();
                 }
             }
+
 
         }
 
@@ -141,7 +103,7 @@ namespace _6_ReadDWG
 
         private XYZ GetCrossPoint(LINE line1, LINE line2)
         {
-            
+
             if (Math.Round(line1.GetSlope(), 3) == Math.Round(line2.GetSlope(), 3))
             {
                 return line1.endPoint;
@@ -160,7 +122,7 @@ namespace _6_ReadDWG
             double newY = line1.OriPoint.Y + line1.Direction.Y * tt[0, 0];
 
 
-            return new XYZ(newX, newY, 0);
+            return new XYZ(newX, newY, line1.OriPoint.Z);
 
         }
 
@@ -332,70 +294,5 @@ namespace _6_ReadDWG
             return Beams;
         }
 
-
-
-
-
-
-
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /// <summary>
-    /// Allow selection of elements of type T only.
-    /// </summary>
-    class JtElementsOfClassSelectionFilter<T> : ISelectionFilter where T : Element
-    {
-        public bool AllowElement(Element e)
-        {
-            return e is T;
-        }
-
-        public bool AllowReference(Reference r, XYZ p)
-        {
-            return true;
-        }
     }
 }
-

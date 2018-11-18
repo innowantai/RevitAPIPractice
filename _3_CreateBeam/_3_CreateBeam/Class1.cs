@@ -62,21 +62,21 @@ namespace _3_CreateBeam
 
 
 
-            //FloorType FT = new FilteredElementCollector(revitDoc)
-            //                       .OfClass(typeof(FloorType))
-            //                       .First<Element>(
-            //                         e => e.Name.Equals("160mm 混凝土與 50mm 金屬板"))
-            //                         as FloorType;
+            FloorType FT = new FilteredElementCollector(revitDoc)
+                                   .OfClass(typeof(FloorType))
+                                   .First<Element>(
+                                     e => e.Name.Equals("160mm 混凝土與 50mm 金屬板"))
+                                     as FloorType;
 
 
-            //Transaction transaction = new Transaction(revitDoc);
-            //FailureHandlingOptions failureHandlingOptions = transaction.GetFailureHandlingOptions();
-            //FailureHandler failureHandler = new FailureHandler();
-            //failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
-            //failureHandlingOptions.SetClearAfterRollback(false);
-            //transaction.SetFailureHandlingOptions(failureHandlingOptions);
-            //transaction.Start("Transaction Name");
-            //// Do something here that causes the error
+            Transaction transaction = new Transaction(revitDoc);
+            FailureHandlingOptions failureHandlingOptions = transaction.GetFailureHandlingOptions();
+            FailureHandler failureHandler = new FailureHandler();
+            failureHandlingOptions.SetFailuresPreprocessor(failureHandler);
+            failureHandlingOptions.SetClearAfterRollback(false);
+            transaction.SetFailureHandlingOptions(failureHandlingOptions);
+            transaction.Start("Transaction Name");
+            // Do something here that causes the error
 
             //List<string> Height = new List<string>();
             //List<XYZ> Data = LoadTest(ref Height, Path.Combine(getPath, "final.txt"));

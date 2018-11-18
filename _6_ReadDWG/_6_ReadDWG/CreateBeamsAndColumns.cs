@@ -65,6 +65,14 @@ namespace _6_ReadDWG
                     }
                 }
 
+                if (Form.chPlate.Checked)
+                {
+                     
+                    CreateFloors createFloors = new CreateFloors(revitDoc);
+                    createFloors.CreateFloor(Form.returnBaseLevel[1]);
+
+                }
+
 
             }
         }

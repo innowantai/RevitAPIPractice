@@ -104,8 +104,8 @@ namespace _6_ReadDWG
                 double newX2 = this.startPoint.X - tmpData;
                 double newY2 = this.startPoint.Y - _m * tmpData;
 
-                XYZ newStartPoint1 = new XYZ(newX1, newY1, 0);
-                XYZ newStartPoint2 = new XYZ(newX2, newY2, 0);
+                XYZ newStartPoint1 = new XYZ(newX1, newY1, this.startPoint.Z);
+                XYZ newStartPoint2 = new XYZ(newX2, newY2, this.startPoint.Z);
                 return new LINE[2] { getNewLine(newStartPoint1), getNewLine(newStartPoint2) };
             }
         }
@@ -126,7 +126,7 @@ namespace _6_ReadDWG
             double tmpData = 1 / Math.Sqrt(m * m + 1);
             double newX2 = point.X + this.GetLength() * tmpData;
             double newY2 = point.Y + m * this.GetLength() * tmpData;
-            return new LINE(point, new XYZ(newX2, newY2, 0));
+            return new LINE(point, new XYZ(newX2, newY2, point.Z));
         }
 
         public double GetSlope()
