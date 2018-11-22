@@ -12,7 +12,7 @@ namespace LINEObjectTest
         static void Main(string[] args)
         {
             LINE line1 = new LINE(new XYZ(0,0,0), new XYZ(6,0,0));
-            LINE line2 = new LINE(new XYZ(10,0,0), new XYZ(15,0,0));
+            LINE line2 = new LINE(new XYZ(12,0,0), new XYZ(15,0,0));
 
             XYZ res = GetCrossPoint(line1,line2);
             res.ShowRes();
@@ -22,11 +22,7 @@ namespace LINEObjectTest
 
         public static XYZ GetCrossPoint(LINE line1, LINE line2)
         {
-
-            if (line1.GetSlope() == line2.GetSlope())
-            {
-                return line1.endPoint;
-            }
+             
 
             MATRIX m1 = new MATRIX(new double[,] { { line1.Direction.X, -line2.Direction.X },
                                                     {line1.Direction.Y, -line2.Direction.Y } });

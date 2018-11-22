@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -26,7 +27,7 @@ namespace _6_ReadDWG
         {
 
             List<List<LINE>> NewBeamGroup = BeamPreProcessing(targetLevel);
-
+             
             List<CurveArray> floorCurves = new List<CurveArray>();
             foreach (List<LINE> Beams in NewBeamGroup)
             {
@@ -36,7 +37,7 @@ namespace _6_ReadDWG
                     curveArray.Append(Line.CreateBound(beam.GetStartPoint(), beam.GetEndPoint()));
                 }
                 floorCurves.Add(curveArray);
-            }
+            } 
 
             FilteredElementCollector collector = new FilteredElementCollector(this.revitDoc);
             collector.OfCategory(BuiltInCategory.OST_Floors);
@@ -45,6 +46,7 @@ namespace _6_ReadDWG
 
             foreach (CurveArray curveArray in floorCurves)
             {
+
                 using (Transaction trans = new Transaction(this.revitDoc))
                 {
                     FailureHandlingOptions failureHandlingOptions = trans.GetFailureHandlingOptions();
@@ -77,6 +79,16 @@ namespace _6_ReadDWG
                 Result.Add(TakeOffColumnEdge(columns, item));
             }
 
+            ConnectedEdge(ref Result);
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            StreamWriter sw = new StreamWriter(Path.Combine(path, "樓層", "Points.txt"));
+            List<LINE> data1 = Result[0];
+            foreach (var dd in data1)
+            {
+                sw.WriteLine(dd.GetStartPoint().X + " " + dd.GetStartPoint().Y + " " + dd.GetEndPoint().X + " " + dd.GetEndPoint().Y);
+                sw.Flush();
+            }
+            sw.Close();
 
             return Result;
         }
@@ -85,8 +97,9 @@ namespace _6_ReadDWG
         private List<LINE> TakeOffColumnEdge(Dictionary<string, List<LINE>> columns, List<LINE> floor)
         {
             foreach (KeyValuePair<string, List<LINE>> column in columns)
-            { 
-                Dictionary<int, int> PairPo = new Dictionary<int, int>();
+            {
+                List<LINE> newFloor = new List<LINE>();
+                Dictionary<int, List<LINE>> tmpData = new Dictionary<int, List<LINE>>();
                 for (int ii = 0; ii < column.Value.Count; ii++)
                 {
                     LINE columnEdge = column.Value[ii];
@@ -95,15 +108,75 @@ namespace _6_ReadDWG
                         LINE floorEdge = floor[jj];
                         if (floorEdge.GetSlope() == columnEdge.GetSlope())  continue; 
                         XYZ crossPoint = floorEdge.GetCrossPoint(columnEdge);
+
                         if (floorEdge.IsPointInLine(crossPoint) && columnEdge.IsPointInLine(crossPoint))
+                        { 
+                            XYZ innerPoint = IsInner(columnEdge.GetStartPoint(), floor) ? 
+                                             columnEdge.GetStartPoint() : columnEdge.GetEndPoint();
+
+                            double dis1 = (crossPoint - floorEdge.GetStartPoint()).GetLength();
+                            double dis2 = (crossPoint - floorEdge.GetEndPoint()).GetLength();
+                            LINE newLine = null;
+                            List<LINE> newList = new List<LINE>();
+                            if (dis1 > dis2)
+                            {
+                                floorEdge.ResetParameters(crossPoint, "EndPoint");
+                                newLine = new LINE(crossPoint, innerPoint);
+                                newList.Add(floorEdge);
+                                newList.Add(newLine);
+                            }
+                            else
+                            {
+                                newLine = new LINE(innerPoint, crossPoint);
+                                floorEdge.ResetParameters(crossPoint, "StartPoint");
+                                newList.Add(newLine);
+                                newList.Add(floorEdge);
+                            }
+                            tmpData[jj] = newList; 
+                        }
+                    } 
+
+                }
+
+
+                for (int kk = 0; kk < floor.Count; kk++)
+                {
+                    if (tmpData.ContainsKey(kk))
+                    {
+                        foreach (LINE item in tmpData[kk])
                         {
-                            PairPo[ii] = jj;
+                            newFloor.Add(item);
                         }
                     }
-                } 
+                    else
+                    {
+                        newFloor.Add(floor[kk]);
+                    }
+                }
+                floor = new List<LINE>();
+                floor = newFloor;
+
+
+
             }
 
             return floor;
+        }
+
+
+        private bool IsInner(XYZ point,List<LINE> boundary)
+        {
+            double minX = boundary.Min(m => m.GetStartPoint().X);
+            double maxX = boundary.Max(m => m.GetStartPoint().X);
+            double minY = boundary.Min(m => m.GetStartPoint().Y);
+            double maxY = boundary.Max(m => m.GetStartPoint().Y);
+
+            if (point.X > minX && point.X < maxX && point.Y > minY && point.Y < maxY)
+            {
+                return true;
+            }
+            return false;
+
         }
 
 
@@ -226,15 +299,24 @@ namespace _6_ReadDWG
                 NewBeamGroup.Add(tmpBeams);
             }
 
+            ConnectedEdge(ref NewBeamGroup); 
 
+            return NewBeamGroup;
+        }
+
+
+        private void ConnectedEdge(ref List<List<LINE>> NewBeamGroup)
+        {
             foreach (List<LINE> Beams in NewBeamGroup)
             {
+                Dictionary<int, LINE> tmpAddLines = new Dictionary<int, LINE>();
                 for (int i = 0; i < Beams.Count; i++)
                 {
                     LINE L1 = Beams[i];
                     LINE L2 = i + 1 == Beams.Count ? Beams[0] : Beams[i + 1];
                     XYZ crossPoint = L1.GetCrossPoint(L2);
                     Beams[i].ResetParameters(crossPoint, "EndPoint");
+
                     if (i + 1 == Beams.Count)
                     {
                         Beams[0].ResetParameters(crossPoint, "StartPoint");
@@ -243,10 +325,12 @@ namespace _6_ReadDWG
                     {
                         Beams[i + 1].ResetParameters(crossPoint, "StartPoint");
                     }
+
                 }
+                 
+
             }
 
-            return NewBeamGroup;
         }
 
 

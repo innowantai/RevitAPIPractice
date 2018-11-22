@@ -18,7 +18,7 @@ namespace _6_ReadDWG
         private XYZ endPoint { get; set; }
         private XYZ OriPoint { get; set; }
         private XYZ Direction { get; set; }
-        private double c { get; set; }
+        public double c { get; set; } 
         private double Slope { get; set; }
         private double Length { get; set; }
         public string Name { get; set; }
@@ -30,7 +30,7 @@ namespace _6_ReadDWG
             this.Slope = this.GetSlope();
             this.Name = "";
             this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
-            SetParaMeters();
+             SetParaMeters();
         }
         public LINE(XYZ _startPoint, XYZ _endPoint, string NAME)
         {
@@ -39,6 +39,7 @@ namespace _6_ReadDWG
             this.Name = NAME;
             this.Slope = this.GetSlope();
             this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
+             
             SetParaMeters();
         }
 
@@ -54,6 +55,9 @@ namespace _6_ReadDWG
                                     this.OriPoint.Z + this.Length * this.Direction.Z);
 
             this.Slope = this.GetSlope();
+            this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
+            
+
         }
 
         public bool IsPointInLine(XYZ point)
@@ -84,6 +88,9 @@ namespace _6_ReadDWG
             }
             this.Slope = this.GetSlope();
             this.Length = this.GetLength();
+            this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
+             
+
 
             SetParaMeters();
         }
@@ -101,7 +108,24 @@ namespace _6_ReadDWG
         {
             if (Math.Round(this.GetSlope(), 3) == Math.Round(line2.GetSlope(), 3))
             {
-                return this.GetEndPoint();
+                LINE tmpLine = new LINE(this.GetEndPoint(),line2.GetStartPoint());
+                if (this.IsSameDirection(tmpLine.Direction))
+                {
+                    if (this.IsSameDirection(line2.Direction))
+                    {
+                        return (this.GetEndPoint() + line2.GetStartPoint()) / 2;
+                    }
+                    else
+                    {
+                        return (this.GetStartPoint() + line2.GetStartPoint()) / 2;
+
+                    } 
+                }
+                else
+                { 
+                    return this.GetEndPoint();  
+                }
+
             }
 
             MATRIX m1 = new MATRIX(new double[,] { { this.Direction.X, -line2.Direction.X },
@@ -168,6 +192,16 @@ namespace _6_ReadDWG
             }
         }
 
+
+        public bool IsSameDirection(XYZ dir2)
+        {
+            XYZ dir1 = this.Direction;
+            if (Math.Abs(dir1.X) == Math.Abs(dir2.X) && Math.Abs(dir1.Y) == Math.Abs(dir2.Y) && Math.Abs(dir1.Z) == Math.Abs(dir2.Z) )
+            {
+                return true;
+            }
+            return false; 
+        }
 
         private double GetDistanceFromPoint(XYZ targetPoint)
         {
@@ -251,10 +285,14 @@ namespace _6_ReadDWG
         {
             return this.OriPoint;
         }
+        public XYZ GetDirection()
+        {
+            return this.Direction;
+        }
 
 
 
-         
+
 
 
 
