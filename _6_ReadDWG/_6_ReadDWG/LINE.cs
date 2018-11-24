@@ -109,9 +109,9 @@ namespace _6_ReadDWG
             if (Math.Round(this.GetSlope(), 3) == Math.Round(line2.GetSlope(), 3))
             {
                 LINE tmpLine = new LINE(this.GetEndPoint(),line2.GetStartPoint());
-                if (this.IsSameDirection(tmpLine.Direction))
+                if (this.IsSameDirection(tmpLine.Direction,true))
                 {
-                    if (this.IsSameDirection(line2.Direction))
+                    if (this.IsSameDirection(line2.Direction, true))
                     {
                         return (this.GetEndPoint() + line2.GetStartPoint()) / 2;
                     }
@@ -193,12 +193,16 @@ namespace _6_ReadDWG
         }
 
 
-        public bool IsSameDirection(XYZ dir2)
+        public bool IsSameDirection(XYZ dir2,bool IsUseAbs)
         {
             XYZ dir1 = this.Direction;
-            if (Math.Abs(dir1.X) == Math.Abs(dir2.X) && Math.Abs(dir1.Y) == Math.Abs(dir2.Y) && Math.Abs(dir1.Z) == Math.Abs(dir2.Z) )
+            if (IsUseAbs && Math.Abs(dir1.X) == Math.Abs(dir2.X) && Math.Abs(dir1.Y) == Math.Abs(dir2.Y) && Math.Abs(dir1.Z) == Math.Abs(dir2.Z) )
             {
                 return true;
+            }
+            else if (!IsUseAbs && dir1.X == dir2.X && dir1.Y == dir2.Y && dir1.Z == dir2.Z)
+            {
+                return true; 
             }
             return false; 
         }
