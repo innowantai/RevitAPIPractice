@@ -22,6 +22,8 @@ namespace _6_ReadDWG
         private double Slope { get; set; }
         private double Length { get; set; }
         public string Name { get; set; }
+        public string LevelName { get; set; }
+        public double Width { get; set; }
 
         public LINE(XYZ _startPoint, XYZ _endPoint)
         {
@@ -43,6 +45,30 @@ namespace _6_ReadDWG
             SetParaMeters();
         }
 
+        public LINE(XYZ _startPoint, XYZ _endPoint, string NAME, string LevelName_)
+        {
+            this.startPoint = _startPoint;
+            this.endPoint = _endPoint;
+            this.Name = NAME;
+            this.LevelName = LevelName_;
+            this.Slope = this.GetSlope();
+            this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
+
+            SetParaMeters();
+        }
+
+        public LINE(XYZ _startPoint, XYZ _endPoint, string NAME, string LevelName_, double width_)
+        {
+            this.startPoint = _startPoint;
+            this.endPoint = _endPoint;
+            this.Name = NAME;
+            this.LevelName = LevelName_;
+            this.Width = width_;
+            this.Slope = this.GetSlope();
+            this.c = this.Slope == -1 ? 0 : this.GetStartPoint().Y - this.Slope * this.GetStartPoint().X;
+
+            SetParaMeters();
+        }
 
         public LINE(XYZ OriPoint_, XYZ Direction_, double Length_)
         {
@@ -100,13 +126,16 @@ namespace _6_ReadDWG
             double dx = this.GetEndPoint().X - this.GetStartPoint().X;
             double dy = this.GetEndPoint().Y - this.GetStartPoint().Y;
             double dz = this.GetEndPoint().Z - this.GetStartPoint().Z;
+            this.Length = this.GetLength();
             this.OriPoint = new XYZ(this.GetStartPoint().X, this.GetStartPoint().Y, this.GetStartPoint().Z);
+
             this.Direction = new XYZ(dx / this.GetLength(), dy / this.GetLength(), 0);
+
         }
 
         public XYZ GetCrossPoint(LINE line2)
         {
-            if (Math.Round(this.GetSlope(), 3) == Math.Round(line2.GetSlope(), 3))
+            if (this.IsSameDirection(line2.GetDirection(), true))
             {
                 LINE tmpLine = new LINE(this.GetEndPoint(),line2.GetStartPoint());
                 if (this.IsSameDirection(tmpLine.Direction,true))
@@ -196,11 +225,15 @@ namespace _6_ReadDWG
         public bool IsSameDirection(XYZ dir2,bool IsUseAbs)
         {
             XYZ dir1 = this.Direction;
-            if (IsUseAbs && Math.Abs(dir1.X) == Math.Abs(dir2.X) && Math.Abs(dir1.Y) == Math.Abs(dir2.Y) && Math.Abs(dir1.Z) == Math.Abs(dir2.Z) )
+            if (IsUseAbs && Math.Abs(Math.Round(dir1.X,3)) == Math.Abs(Math.Round(dir2.X, 3)) 
+                         && Math.Abs(Math.Round(dir1.Y, 3)) == Math.Abs(Math.Round(dir2.Y, 3)) 
+                         && Math.Abs(Math.Round(dir1.Z, 3)) == Math.Abs(Math.Round(dir2.Z, 3)))
             {
                 return true;
             }
-            else if (!IsUseAbs && dir1.X == dir2.X && dir1.Y == dir2.Y && dir1.Z == dir2.Z)
+            else if (!IsUseAbs && Math.Round(dir1.X, 3) == Math.Round(dir2.X, 3) 
+                               && Math.Round(dir1.Y, 3) == Math.Round(dir2.Y, 3) 
+                               && Math.Round(dir1.Z, 3) == Math.Round(dir2.Z, 3))
             {
                 return true; 
             }

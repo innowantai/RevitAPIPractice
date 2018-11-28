@@ -251,6 +251,7 @@
             this.chPlate.TabIndex = 22;
             this.chPlate.Text = "建立版";
             this.chPlate.UseVisualStyleBackColor = true;
+            this.chPlate.Visible = false;
             // 
             // Form1
             // 

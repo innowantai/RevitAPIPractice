@@ -63,17 +63,7 @@ namespace _6_ReadDWG
                     {
                         RevCreate.CreateBeam(Form.returnType[CaseIndex], Form.returnBaseLevel[CaseIndex], pp);
                     }
-                }
-
-                if (Form.chPlate.Checked)
-                {
-                     
-                    CreateFloors createFloors = new CreateFloors(revitDoc);
-                    createFloors.CreateFloor(Form.returnBaseLevel[1]);
-
-                }
-
-
+                } 
             }
         }
 

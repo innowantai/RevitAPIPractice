@@ -24,7 +24,14 @@ using Autodesk.Revit.UI.Selection;
 ///    will do : find the outline of the columne to open floor                                        ((2018/11/18
 /// 4. Above Case all for H and V direction only 
 /// 5. 樓板建立all case有些問題
-/// 6. 梁的偏移計算方式可能需要修改，取的其GeometryInstance去轉換而不是用檔名去換算
+///     Solved : GetBeamGroup 要弄成更General
+/// 6. 梁的偏移計算方式可能需要修改，取得其GeometryInstance去轉換而不是用檔名去換算 
+///     已解決(2018/11/25)
+/// 7. 大型結構該樓層的梁高層可能不一樣，需分類
+///     已解決(2018/11/25) --> 使用條件為梁的高度要相同
+/// 
+/// 8.擷取不到柱的Instance
+///
 /// </summary>
 
 
@@ -55,14 +62,26 @@ namespace _6_ReadDWG
                 break;
             }
 
+            MainForm mainform = new MainForm();
+            mainform.ShowDialog();
 
-            CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-            Creation.Main_Create(revitDoc, uidoc);
+            if (mainform.CASEName == 0)
+            {
+                CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+                Creation.Main_Create(revitDoc, uidoc); 
+            }
+            else
+            {
+                Floor_Created_Main();
+
+            }
+
+
 
 
             
 
-            
+
 
 
 
@@ -70,7 +89,42 @@ namespace _6_ReadDWG
         }
 
 
-         
+
+
+        private void Floor_Created_Main()
+        {
+            /// 取得所有樓層
+            List<Level> levels = RevFind.GetLevels(revitDoc);
+            /// 取得所有板的種類
+            FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
+            collector.OfCategory(BuiltInCategory.OST_Floors);
+            List<Element> floorTypes = collector.ToList();
+
+            /// 呼叫創立板之GUI
+            Form2_Floor FormFloor = new Form2_Floor(levels, floorTypes);
+            FormFloor.ShowDialog();
+
+            if (FormFloor.DialogResult == System.Windows.Forms.DialogResult.OK)
+            { 
+                /// 取得目標樓層 
+                Level targetLevel = levels[FormFloor.cmbfloorLevel.SelectedIndex]; 
+
+                /// 取得創立樓板種類
+                FloorType floor_type = floorTypes[FormFloor.cmbFloorTypes.SelectedIndex] as FloorType;
+
+                /// 創立建立樓板之物建
+                CreateFloor_Version2 createFloors = new CreateFloor_Version2(revitDoc);
+
+                /// 建立樓板
+                createFloors.CreateFloor(targetLevel, floor_type);
+
+
+            }
+        }
+
+
+
+
 
 
     }
