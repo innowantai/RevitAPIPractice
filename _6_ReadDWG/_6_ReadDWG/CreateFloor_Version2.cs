@@ -54,11 +54,32 @@ namespace _6_ReadDWG
 
             Result = ConnectedEdgeFromMiddleColumns(Result);
 
-            LINE target = nonSelected[0];
+            int pastNum = Result.Count;
+            int[] takeOff = new int[nonSelected.Count];
+            for (int j = 0; j < 4; j++)
+            {
+                for (int i = 0; i < nonSelected.Count; i++)
+                {
+                    if (takeOff[i] == -1) continue;
+                    Result = TakeOffSubBeams(nonSelected[i], Result);
+                    if (pastNum != Result.Count)
+                    {
+                        takeOff[i] = -1;
+                        pastNum = Result.Count;
+                    }
+                }
+            }
+
+            return Result;
+        }
+
+
+        private List<List<LINE>> TakeOffSubBeams(LINE target, List<List<LINE>> Result)
+        {
             List<int> takeOffRecored = new List<int>();
             List<List<LINE>> newFloors = new List<List<LINE>>();
             for (int i = 0; i < Result.Count; i++)
-            {
+            {  
                 List<LINE> item = Result[i];
                 List<XYZ> CrossPoints = new List<XYZ>();
                 List<List<LINE>> splitLines = new List<List<LINE>>();
@@ -66,7 +87,7 @@ namespace _6_ReadDWG
                 for (int j = 0; j < item.Count; j++)
                 {
                     LINE edgeLine = item[j];
-                    if (!target.IsSameDirection(edgeLine.GetDirection(), false))
+                    if (!target.IsSameDirection(edgeLine.GetDirection(), true))
                     {
                         XYZ crossPoint = target.GetCrossPoint(edgeLine);
                         if (edgeLine.IsPointInLine(crossPoint) && target.IsPointInLine(crossPoint))
@@ -80,12 +101,12 @@ namespace _6_ReadDWG
                     }
                 }
 
-                if (CrossPoints.Count == 2)
-                {
+                if (CrossPoints.Count == 2 && Math.Round(CrossPoints[1].GetLength(), 4) != Math.Round(CrossPoints[0].GetLength(), 4))
+                { 
                     takeOffRecored.Add(i);
-                    double dd = target.Width/2;
+                    double dd = target.Width / 2;
                     XYZ targetPoint = item[0].GetStartPoint();
-                    LINE newLine1 = (new LINE(CrossPoints[0], CrossPoints[1])).GetShiftLines(targetPoint,dd,"IN")[0];
+                    LINE newLine1 = (new LINE(CrossPoints[0], CrossPoints[1])).GetShiftLines(targetPoint, dd, "IN")[0];
                     LINE newLine2 = (new LINE(CrossPoints[1], CrossPoints[0])).GetShiftLines(targetPoint, dd, "OUT")[0];
                     /// getPart1
                     List<LINE> newFloor1 = new List<LINE>();
@@ -150,6 +171,7 @@ namespace _6_ReadDWG
 
             return Result;
         }
+
 
 
         /// <summary>
