@@ -42,7 +42,6 @@
             this.txtShift = new System.Windows.Forms.TextBox();
             this.radCircle = new System.Windows.Forms.RadioButton();
             this.radPloyline = new System.Windows.Forms.RadioButton();
-            this.cmbTopFamilyType = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // cmbColCADLayers
@@ -52,7 +51,7 @@
             this.cmbColCADLayers.FormattingEnabled = true;
             this.cmbColCADLayers.Location = new System.Drawing.Point(200, 53);
             this.cmbColCADLayers.Name = "cmbColCADLayers";
-            this.cmbColCADLayers.Size = new System.Drawing.Size(291, 24);
+            this.cmbColCADLayers.Size = new System.Drawing.Size(162, 24);
             this.cmbColCADLayers.TabIndex = 17;
             // 
             // cmbColTopLevel
@@ -71,9 +70,9 @@
             this.cmbColBaseLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColBaseLevel.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColBaseLevel.FormattingEnabled = true;
-            this.cmbColBaseLevel.Location = new System.Drawing.Point(200, 201);
+            this.cmbColBaseLevel.Location = new System.Drawing.Point(200, 170);
             this.cmbColBaseLevel.Name = "cmbColBaseLevel";
-            this.cmbColBaseLevel.Size = new System.Drawing.Size(291, 24);
+            this.cmbColBaseLevel.Size = new System.Drawing.Size(162, 24);
             this.cmbColBaseLevel.TabIndex = 15;
             // 
             // label5
@@ -91,7 +90,7 @@
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label4.Location = new System.Drawing.Point(63, 201);
+            this.label4.Location = new System.Drawing.Point(63, 170);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(100, 24);
             this.label4.TabIndex = 13;
@@ -110,7 +109,7 @@
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("新細明體", 14F);
-            this.button1.Location = new System.Drawing.Point(261, 306);
+            this.button1.Location = new System.Drawing.Point(261, 275);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(103, 41);
             this.button1.TabIndex = 18;
@@ -122,7 +121,7 @@
             // 
             this.label3.AutoSize = true;
             this.label3.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label3.Location = new System.Drawing.Point(68, 102);
+            this.label3.Location = new System.Drawing.Point(68, 95);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(95, 24);
             this.label3.TabIndex = 19;
@@ -133,9 +132,9 @@
             this.cmbColFamilyType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColFamilyType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColFamilyType.FormattingEnabled = true;
-            this.cmbColFamilyType.Location = new System.Drawing.Point(201, 126);
+            this.cmbColFamilyType.Location = new System.Drawing.Point(201, 95);
             this.cmbColFamilyType.Name = "cmbColFamilyType";
-            this.cmbColFamilyType.Size = new System.Drawing.Size(291, 24);
+            this.cmbColFamilyType.Size = new System.Drawing.Size(162, 24);
             this.cmbColFamilyType.TabIndex = 20;
             this.cmbColFamilyType.SelectedIndexChanged += new System.EventHandler(this.cmbColFamilyType_SelectedIndexChanged);
             // 
@@ -144,16 +143,16 @@
             this.cmbColType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbColType.Font = new System.Drawing.Font("新細明體", 12F);
             this.cmbColType.FormattingEnabled = true;
-            this.cmbColType.Location = new System.Drawing.Point(201, 156);
+            this.cmbColType.Location = new System.Drawing.Point(201, 125);
             this.cmbColType.Name = "cmbColType";
-            this.cmbColType.Size = new System.Drawing.Size(291, 24);
+            this.cmbColType.Size = new System.Drawing.Size(162, 24);
             this.cmbColType.TabIndex = 21;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label1.Location = new System.Drawing.Point(65, 252);
+            this.label1.Location = new System.Drawing.Point(65, 221);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(95, 24);
             this.label1.TabIndex = 22;
@@ -162,16 +161,16 @@
             // txtShift
             // 
             this.txtShift.Font = new System.Drawing.Font("新細明體", 14F);
-            this.txtShift.Location = new System.Drawing.Point(200, 252);
+            this.txtShift.Location = new System.Drawing.Point(200, 221);
             this.txtShift.Name = "txtShift";
-            this.txtShift.Size = new System.Drawing.Size(293, 30);
+            this.txtShift.Size = new System.Drawing.Size(164, 30);
             this.txtShift.TabIndex = 23;
             // 
             // radCircle
             // 
             this.radCircle.AutoSize = true;
             this.radCircle.Font = new System.Drawing.Font("新細明體", 12F);
-            this.radCircle.Location = new System.Drawing.Point(523, 34);
+            this.radCircle.Location = new System.Drawing.Point(387, 41);
             this.radCircle.Name = "radCircle";
             this.radCircle.Size = new System.Drawing.Size(58, 20);
             this.radCircle.TabIndex = 24;
@@ -183,7 +182,7 @@
             // 
             this.radPloyline.AutoSize = true;
             this.radPloyline.Font = new System.Drawing.Font("新細明體", 12F);
-            this.radPloyline.Location = new System.Drawing.Point(523, 57);
+            this.radPloyline.Location = new System.Drawing.Point(387, 64);
             this.radPloyline.Name = "radPloyline";
             this.radPloyline.Size = new System.Drawing.Size(74, 20);
             this.radPloyline.TabIndex = 25;
@@ -191,23 +190,11 @@
             this.radPloyline.Text = "多邊形";
             this.radPloyline.UseVisualStyleBackColor = true;
             // 
-            // cmbTopFamilyType
-            // 
-            this.cmbTopFamilyType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbTopFamilyType.Font = new System.Drawing.Font("新細明體", 12F);
-            this.cmbTopFamilyType.FormattingEnabled = true;
-            this.cmbTopFamilyType.Location = new System.Drawing.Point(200, 96);
-            this.cmbTopFamilyType.Name = "cmbTopFamilyType";
-            this.cmbTopFamilyType.Size = new System.Drawing.Size(291, 24);
-            this.cmbTopFamilyType.TabIndex = 26;
-            this.cmbTopFamilyType.SelectedIndexChanged += new System.EventHandler(this.cmbTopFamilyType_SelectedIndexChanged);
-            // 
             // Form_CreateLight
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(652, 399);
-            this.Controls.Add(this.cmbTopFamilyType);
+            this.ClientSize = new System.Drawing.Size(523, 399);
             this.Controls.Add(this.radPloyline);
             this.Controls.Add(this.radCircle);
             this.Controls.Add(this.txtShift);
@@ -246,6 +233,5 @@
         public System.Windows.Forms.TextBox txtShift;
         public System.Windows.Forms.RadioButton radCircle;
         public System.Windows.Forms.RadioButton radPloyline;
-        private System.Windows.Forms.ComboBox cmbTopFamilyType;
     }
 }

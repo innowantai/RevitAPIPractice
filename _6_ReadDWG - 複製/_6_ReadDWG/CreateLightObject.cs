@@ -33,7 +33,7 @@ namespace _6_ReadDWG
 
 
             /// 取得Revit指定的FamilyTypes
-            Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> LightFamilyTypes = CatchLightFamilyType(RevFind.GetDocLightTypes(revitDoc));
+            Dictionary<string, List<FamilySymbol>> LightFamilyTypes = CatchLightFamilyType(RevFind.GetDocLightTypes(revitDoc));
             /// 取得Revit所有樓層資訊
             List<Level> levels = RevFind.GetLevels(revitDoc);
             /// 建立Form物件
@@ -102,50 +102,7 @@ namespace _6_ReadDWG
 
 
 
-        /// <summary>
-        /// 族群處理
-        /// </summary>
-        /// <param name="Types"></param>
-        /// <returns></returns>
-        private Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> CatchLightFamilyType(Dictionary<string, List<FamilySymbol>> Types)
-        {
-            Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> AllFamilyTypes = new Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>>();
-            
-            foreach (KeyValuePair<string, List<FamilySymbol>> item in Types)
-            {
-                Dictionary<string, List<FamilySymbol>> LightType = new Dictionary<string, List<FamilySymbol>>();
-                LightType[item.Key] = item.Value;
-                 
-                string KEY = item.Value[0].Category.Name.ToString();
 
-                if (AllFamilyTypes.Keys.Contains(KEY))
-                {
-                    List<Dictionary<string, List<FamilySymbol>>> tmpData = AllFamilyTypes[KEY];
-                    tmpData.Add(LightType);
-                }
-                else
-                {
-                    AllFamilyTypes[KEY] = new List<Dictionary<string, List<FamilySymbol>>>() { LightType };
-                }
-
-                //if (item.Key.Contains('燈') || item.Key.Contains("Light") || item.Key.Contains("light") || item.Key.Contains("風口"))
-                //{
-                //    LightType[item.Key] = item.Value;
-                //    //string test = item.Value[0].Category.Name.ToString(); 
-                //}
-            }
-             
-           return AllFamilyTypes;
-        }
-
-
-
-        /// <summary>
-        /// 多邊形中心處理
-        /// </summary>
-        /// <param name="Lines"></param>
-        /// <param name="RadioCase"></param>
-        /// <returns></returns>
         private List<LINE> GetPolylineAndLineClosedRegion(List<LINE> Lines, string RadioCase)
         {
             List<LINE> RESULT = new List<LINE>();
@@ -209,13 +166,38 @@ namespace _6_ReadDWG
             return RESULT;
         }
 
+        private Dictionary<string, List<FamilySymbol>> CatchLightFamilyType(Dictionary<string, List<FamilySymbol>> Types)
+        {
+            Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> AllFamilyTypes = new Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>>();
+            
+            foreach (KeyValuePair<string, List<FamilySymbol>> item in Types)
+            {
+                Dictionary<string, List<FamilySymbol>> LightType = new Dictionary<string, List<FamilySymbol>>();
+                LightType[item.Key] = item.Value;
 
+                List<FamilySymbol> newList = new List<FamilySymbol>(); 
+                string KEY = item.Value[0].Category.Name.ToString();
+                if (AllFamilyTypes.Keys.Contains(KEY))
+                {
+                    List<Dictionary<string, List<FamilySymbol>>> tmpData = AllFamilyTypes[KEY];
+                    tmpData.Add(LightType);
+                }
+                else
+                {
+                    AllFamilyTypes[KEY] = new List<Dictionary<string, List<FamilySymbol>>>() { LightType };
+                }
 
-        /// <summary>
-        /// 移除相同點
-        /// </summary>
-        /// <param name="LINES"></param>
-        /// <returns></returns>
+                //if (item.Key.Contains('燈') || item.Key.Contains("Light") || item.Key.Contains("light") || item.Key.Contains("風口"))
+                //{
+                //    LightType[item.Key] = item.Value;
+                //    //string test = item.Value[0].Category.Name.ToString(); 
+                //}
+            }
+
+            return null;
+           // return LightType;
+        }
+
         private List<XYZ> TakeOffSameLightPoint(List<LINE> LINES)
         {
             List<int> flag = new List<int>();
@@ -244,12 +226,6 @@ namespace _6_ReadDWG
 
         }
 
-        /// <summary>
-        /// 是否為相同點
-        /// </summary>
-        /// <param name="point1"></param>
-        /// <param name="point2"></param>
-        /// <returns></returns>
         private bool IsSamePoint(XYZ point1, XYZ point2)
         {
             int IGPoint = 2;
@@ -262,12 +238,6 @@ namespace _6_ReadDWG
             return false;
         }
 
-        /// <summary>
-        /// 兩線段是否連接
-        /// </summary>
-        /// <param name="line1"></param>
-        /// <param name="line2"></param>
-        /// <returns></returns>
         private bool IsConnected(LINE line1, LINE line2)
         {
             if (IsSamePoint(line1.GetStartPoint(), line2.GetStartPoint()) ||

@@ -26,8 +26,7 @@ namespace _6_ReadDWG
 
         List<Level> levels;
         Dictionary<string, List<LINE>> CADLayers;
-        Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> colFamilyTypes;
-        List<Dictionary<string, List<FamilySymbol>>> subcolFamilyTypes; 
+        Dictionary<string, List<FamilySymbol>> colFamilyTypes; 
         public List<string> returnCADLayers = new List<string>();
         public List<FamilySymbol> returnType = new List<FamilySymbol>();
         public List<Level> returnBaseLevel = new List<Level>();
@@ -35,7 +34,7 @@ namespace _6_ReadDWG
         public bool returnCol = false;
         public bool returnBeam = false;
 
-        public Form_CreateLight(Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> _colFamilyTypes, 
+        public Form_CreateLight(Dictionary<string, List<FamilySymbol>> _colFamilyTypes, 
                                 List<Level> _levels,
                                 Dictionary<string, List<LINE>> _CADLayers)
         {
@@ -50,21 +49,9 @@ namespace _6_ReadDWG
             this.radCircle.Checked = true;
             this.checkBoxes = new List<CheckBox>();
 
-            foreach (KeyValuePair<string, List<Dictionary<string, List<FamilySymbol>>>> item in this.colFamilyTypes)
-            {
-                this.cmbTopFamilyType.Items.Add(item.Key);
-            }
-            this.cmbTopFamilyType.SelectedIndex = 0;
-            this.subcolFamilyTypes = colFamilyTypes[this.cmbTopFamilyType.SelectedItem.ToString()];
-
             /// 載入燈的族群與類型名稱
-            foreach (Dictionary<string, List<FamilySymbol>> entry in this.subcolFamilyTypes)
-            {
-                foreach (KeyValuePair<string, List<FamilySymbol>> item in entry)
-                {
-                    this.cmbColFamilyType.Items.Add(item.Key);
-                } 
-            }
+            foreach (KeyValuePair<string, List<FamilySymbol>> entry in this.colFamilyTypes)
+                this.cmbColFamilyType.Items.Add(entry.Key);
 
             /// 載入Level名稱
             foreach (Level item in this.levels)
@@ -84,9 +71,7 @@ namespace _6_ReadDWG
                         this.cmbColBaseLevel,
                         this.cmbColTopLevel, 
                         this.cmbColCADLayers,
-                        this.cmbTopFamilyType,
-                        this.cmbColFamilyType,
-                        this.cmbColType};
+                        this.cmbColFamilyType};
 
             this.txtBox = new List<System.Windows.Forms.TextBox>() { this.txtShift};
 
@@ -99,12 +84,8 @@ namespace _6_ReadDWG
 
         private void button1_Click(object sender, EventArgs e)
         {
-            FamilySymbol RES = this.colFamilyTypes[cmbTopFamilyType.SelectedItem.ToString()]
-                                        [this.cmbColFamilyType.SelectedIndex]
-                                        [this.cmbColFamilyType.SelectedItem.ToString()]
-                                        [this.cmbColType.SelectedIndex];
 
-            returnType.Add(RES);
+            returnType.Add(colFamilyTypes[cmbColFamilyType.Text][cmbColType.SelectedIndex]);
             returnBaseLevel.Add(levels[cmbColBaseLevel.SelectedIndex]);
             returnTopLevel.Add(levels[cmbColTopLevel.SelectedIndex]);
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
@@ -247,33 +228,14 @@ namespace _6_ReadDWG
             }
 
         }
-
-
-        private void cmbTopFamilyType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-            this.cmbColFamilyType.Items.Clear();
-            this.subcolFamilyTypes = colFamilyTypes[this.cmbTopFamilyType.SelectedItem.ToString()];
-
-            /// 載入燈的族群與類型名稱
-            foreach (Dictionary<string, List<FamilySymbol>> entry in this.subcolFamilyTypes)
-            {
-                foreach (KeyValuePair<string, List<FamilySymbol>> item in entry)
-                {
-                    this.cmbColFamilyType.Items.Add(item.Key);
-                }
-            }
-            this.cmbColFamilyType.SelectedIndex = 0;
-        }
+         
 
         private void cmbColFamilyType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            Dictionary<string, List<FamilySymbol>> tmpData = this.subcolFamilyTypes[this.cmbColFamilyType.SelectedIndex];
+        { 
             this.cmbColType.Items.Clear();
-            foreach (FamilySymbol defaultType in tmpData[this.cmbColFamilyType.SelectedItem.ToString()])
+            foreach (FamilySymbol defaultType in this.colFamilyTypes[this.cmbColFamilyType.Text])
                 this.cmbColType.Items.Add(defaultType.Name);
             this.cmbColType.SelectedIndex = 0;
         }
-
     }
 }
