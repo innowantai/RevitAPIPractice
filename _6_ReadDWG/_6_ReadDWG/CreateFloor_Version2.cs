@@ -20,156 +20,228 @@ namespace _6_ReadDWG
         public CreateFloor_Version2(Document revitDoc_)
         {
             this.revitDoc = revitDoc_;
+
         }
 
-        public void CreateFloor(Level targetLevel, FloorType floor_type)
+        public void CreateFloor(Level targetLevel, Level targetLevelCol, FloorType floor_type)
         {
             /// 取得目標樓層所有的梁
             List<LINE> BEAMS = GetTargetFloorBeams(targetLevel);
-            List<List<LINE>> BEAMS_Class = ClassBeamsByEvelution(BEAMS);
-            foreach (var BB in BEAMS_Class)
-            {
-                List<List<LINE>> Result = this.DataPreProcessing(targetLevel, BB);
-                this.CreateFloor(targetLevel, Result, floor_type);
-            }
+            List<List<LINE>> Result = this.DataPreProcessing(targetLevel, targetLevelCol, BEAMS);
+            this.CreateFloor(targetLevel, Result, floor_type);
+
         }
 
-        private List<List<LINE>> DataPreProcessing(Level targetLevel, List<LINE> BEAMs)
+        private List<List<LINE>> DataPreProcessing(Level targetLevel, Level targetLevelCol, List<LINE> BEAMs)
         {
+            ///// 取得所有梁平均寬度
+            double SHIFTs_Width_Of_Beam = 0;
+            foreach (LINE item in BEAMs)
+            {
+                SHIFTs_Width_Of_Beam += item.Width;
+            }
+            SHIFTs_Width_Of_Beam = SHIFTs_Width_Of_Beam / BEAMs.Count;
+
+            ///// 取得目標樓層所有的柱
+            Dictionary<string, List<LINE>> columns = GetAllColumnsBoundary(targetLevelCol);
+            int kk = 0;
+            double SHIFTs = 0;
+            List<XYZ> colCenterPoints = new List<XYZ>();
+            foreach (KeyValuePair<string, List<LINE>> item in columns)
+            {
+                foreach (LINE line in item.Value)
+                {
+                    SHIFTs += line.GetLength();
+                    kk = kk + 1;
+                }
+
+                if (item.Value.Count != 0)
+                {
+                    double All_X = item.Value.Sum(t => t.GetStartPoint().X) / item.Value.Count;
+                    double All_Y = item.Value.Sum(t => t.GetStartPoint().Y) / item.Value.Count;
+                    colCenterPoints.Add(new XYZ(All_X, All_Y, 0));
+                }
+
+            }
+            SHIFTs = SHIFTs / kk;
+
+
+            ////// 延伸梁的邊緣線至柱中心
+            /// 找出subBeam,將不做延伸處理
+            List<int> NonePo = new List<int>();
+            for (int i = 0; i < BEAMs.Count; i++)
+            {
+                for (int j = 0; j < BEAMs.Count; j++)
+                {
+                    if (i == j) continue;
+                    LINE b1 = BEAMs[i];
+                    LINE b2 = BEAMs[j];
+                    if (Math.Round(b1.GetSlope(), 3) == Math.Round(b2.GetSlope(), 3)) continue;
+                    try
+                    { 
+                        XYZ crossPoint = b1.GetCrossPoint(b2);
+                        if (IsCloseEndsPoint(b1, crossPoint, SHIFTs_Width_Of_Beam) && b2.IsPointInLine(crossPoint))
+                        {
+                            NonePo.Add(i);
+                            break;
+                        };
+                    }
+                    catch (Exception)
+                    {
+                         
+                    }
+                }
+            }
+            List<LINE> Beams_Connect = new List<LINE>();
+            for (int i = 0; i < BEAMs.Count; i++)
+            {
+                if (NonePo.Contains(i))
+                {
+                    Beams_Connect.Add(BEAMs[i]);
+                    continue;
+                };
+
+                List<XYZ> col = GetClosedColumn(colCenterPoints, BEAMs[i]);
+
+                XYZ newStartPoint = GetNewEndedPoint(col[0], BEAMs[i].GetStartPoint(), BEAMs[i]);
+                XYZ newEndPoint = GetNewEndedPoint(col[1], BEAMs[i].GetEndPoint(), BEAMs[i]);
+                if (newStartPoint.X == newEndPoint.X && newStartPoint.Y == newEndPoint.Y)
+                {
+                    Beams_Connect.Add(BEAMs[i]);
+                    continue;
+                }
+                LINE newBeam = new LINE(newStartPoint, newEndPoint);
+                newBeam.Name = BEAMs[i].Name;
+                newBeam.Width = BEAMs[i].Width;
+                newBeam.LevelName = BEAMs[i].LevelName;
+                Beams_Connect.Add(newBeam);
+
+
+
+            }
+
+
+
             /// 將所有的梁轉換至各樓板邊緣線
             List<LINE> nonSelected = new List<LINE>();
-            List<List<LINE>> BeamGroup = GetBeamGroup(BEAMs, ref nonSelected);
+            List<List<LINE>> BeamGroup = GetBeamGroup(Beams_Connect, ref nonSelected, SHIFTs);
 
+            SaveTmp(BeamGroup);
             /// 將樓板邊緣線偏移並連接
             List<List<LINE>> NewBeamGroup = BeamConnectAndShiftProcessing(BeamGroup);
 
-            ///// 取得目標樓層所有的柱
-            Dictionary<string, List<LINE>> columns = GetAllColumnsBoundary(targetLevel);
+            SaveTmp(NewBeamGroup);
+
+            if (NewBeamGroup.Count == 0) return NewBeamGroup;
+
+            double newHeight = NewBeamGroup[0][0].GetStartPoint().Z;
+            ///// 重設目標樓層所有的柱的高度
+            Dictionary<string, List<LINE>> columns2 = new Dictionary<string, List<LINE>>();
+            foreach (KeyValuePair<string, List<LINE>> item in columns)
+            {
+
+                SaveTmp(item.Value);
+                List<LINE> newFloor = new List<LINE>();
+                foreach (LINE floor in item.Value)
+                {
+                    XYZ newSt = new XYZ(floor.GetStartPoint().X,
+                                        floor.GetStartPoint().Y,
+                                        newHeight);
+                    XYZ newEn = new XYZ(floor.GetEndPoint().X,
+                                        floor.GetEndPoint().Y,
+                                        newHeight);
+                    newFloor.Add(new LINE(newSt, newEn));
+
+                }
+                columns2[item.Key] = newFloor;
+            }
 
             List<List<LINE>> Result = new List<List<LINE>>();
             foreach (List<LINE> item in NewBeamGroup)
             {
-                Result.Add(TakeOffColumnEdge(columns, item));
+                Result.Add(TakeOffColumnEdge(columns2, item));
             }
 
+            SaveTmp(Result);
             Result = ConnectedEdgeFromMiddleColumns(Result);
 
-            int pastNum = Result.Count;
-            int[] takeOff = new int[nonSelected.Count];
-            for (int j = 0; j < 4; j++)
-            {
-                for (int i = 0; i < nonSelected.Count; i++)
-                {
-                    if (takeOff[i] == -1) continue;
-                    Result = TakeOffSubBeams(nonSelected[i], Result);
-                    if (pastNum != Result.Count)
-                    {
-                        takeOff[i] = -1;
-                        pastNum = Result.Count;
-                    }
-                }
-            }
-
-            return Result;
+            SaveTmp(Result);
+            /// 拿掉第一輪subBeam
+            List<List<LINE>> Res = TakeOffSubBeams(Result, nonSelected, SHIFTs_Width_Of_Beam);
+            List<List<LINE>> Res2 = TakeOffSubBeams(Res, nonSelected, SHIFTs_Width_Of_Beam);
+            SaveTmp(Res2);
+            return Res2;
         }
 
 
-        private List<List<LINE>> TakeOffSubBeams(LINE target, List<List<LINE>> Result)
+        private XYZ GetNewEndedPoint(XYZ ColTarget_, XYZ EndPoint, LINE Beam)
         {
-            List<int> takeOffRecored = new List<int>();
-            List<List<LINE>> newFloors = new List<List<LINE>>();
-            for (int i = 0; i < Result.Count; i++)
-            {  
-                List<LINE> item = Result[i];
-                List<XYZ> CrossPoints = new List<XYZ>();
-                List<List<LINE>> splitLines = new List<List<LINE>>();
-                List<int> picked = new List<int>();
-                for (int j = 0; j < item.Count; j++)
+            XYZ ColTarget = new XYZ(ColTarget_.X, ColTarget_.Y, Beam.GetStartPoint().Z);
+            XYZ startPoint = Beam.GetStartPoint();
+            XYZ oriDir = Beam.GetDirection();
+            XYZ newDir = new XYZ(oriDir.Y, -oriDir.X, oriDir.Z);
+            LINE VerticalLINE = new LINE(ColTarget, newDir, 1);
+            XYZ newPoint = VerticalLINE.GetCrossPoint(Beam);
+            double dist = Math.Sqrt((newPoint.X - EndPoint.X) * (newPoint.X - EndPoint.X) +
+                          (newPoint.Y - EndPoint.Y) * (newPoint.Y - EndPoint.Y));
+            if (dist > Beam.GetLength())
+            {
+                return EndPoint;
+            }
+            return VerticalLINE.GetCrossPoint(Beam);
+
+        }
+
+        private List<XYZ> GetClosedColumn(List<XYZ> colCenterPoints, LINE beam)
+        {
+            List<double> DiffDist1 = new List<double>();
+            List<double> DiffDist2 = new List<double>();
+            foreach (XYZ item in colCenterPoints)
+            {
+
+                XYZ StartPoint = beam.GetStartPoint();
+                XYZ EndPoint = beam.GetStartPoint();
+                double dist1 = Math.Sqrt((item.X - StartPoint.X) * (item.X - StartPoint.X) +
+                                        (item.Y - StartPoint.Y) * (item.Y - StartPoint.Y));
+                double dist2 = Math.Sqrt((item.X - EndPoint.X) * (item.X - EndPoint.X) +
+                                        (item.Y - EndPoint.Y) * (item.Y - EndPoint.Y));
+                DiffDist1.Add(dist1);
+                DiffDist2.Add(dist2);
+            }
+
+            int p1 = DiffDist1.IndexOf(DiffDist1.Min());
+            int p2 = DiffDist2.IndexOf(DiffDist2.Min());
+            return new List<XYZ>() { colCenterPoints[p1], colCenterPoints[p2] };
+
+
+        }
+
+
+
+        private List<List<LINE>> TakeOffSubBeams(List<List<LINE>> Result, List<LINE> nonSelected, double SHIFTs)
+        {
+            SHIFTs = SHIFTs * 2;
+            /// 拿掉第一輪subBeam
+            List<FloorEdges> result = new List<FloorEdges>();
+            foreach (List<LINE> item in Result)
+            {
+                FloorEdges fe = new FloorEdges(item, nonSelected, SHIFTs);
+                List<LINE> subBeam = fe.GetSubBeam();
+                result.Add(fe);
+            }
+
+            /// 拿掉第二輪subBeam
+            List<List<LINE>> Res = new List<List<LINE>>();
+            foreach (FloorEdges item in result)
+            {
+                foreach (List<LINE> floors in item.GetSubFloors())
                 {
-                    LINE edgeLine = item[j];
-                    if (!target.IsSameDirection(edgeLine.GetDirection(), true))
-                    {
-                        XYZ crossPoint = target.GetCrossPoint(edgeLine);
-                        if (edgeLine.IsPointInLine(crossPoint) && target.IsPointInLine(crossPoint))
-                        {
-                            CrossPoints.Add(crossPoint);
-                            LINE L1 = new LINE(edgeLine.GetStartPoint(), crossPoint);
-                            LINE L2 = new LINE(crossPoint, edgeLine.GetEndPoint());
-                            splitLines.Add(new List<LINE>() { L1, L2 });
-                            picked.Add(j);
-                        }
-                    }
-                }
-
-                if (CrossPoints.Count == 2 && Math.Round(CrossPoints[1].GetLength(), 4) != Math.Round(CrossPoints[0].GetLength(), 4))
-                { 
-                    takeOffRecored.Add(i);
-                    double dd = target.Width / 2;
-                    XYZ targetPoint = item[0].GetStartPoint();
-                    LINE newLine1 = (new LINE(CrossPoints[0], CrossPoints[1])).GetShiftLines(targetPoint, dd, "IN")[0];
-                    LINE newLine2 = (new LINE(CrossPoints[1], CrossPoints[0])).GetShiftLines(targetPoint, dd, "OUT")[0];
-                    /// getPart1
-                    List<LINE> newFloor1 = new List<LINE>();
-                    for (int k = 0; k < item.Count; k++)
-                    {
-                        if (k == picked[0])
-                        {
-                            LINE offSetLine = splitLines[0][0];
-                            offSetLine.ResetParameters(newLine1.GetStartPoint(), "EndPoint");
-                            newFloor1.Add(offSetLine);
-                            newFloor1.Add(newLine1);
-                        }
-                        else if (k == picked[1])
-                        {
-                            LINE offSetLine = splitLines[1][1];
-                            offSetLine.ResetParameters(newLine1.GetEndPoint(), "StartPoint");
-                            newFloor1.Add(offSetLine);
-                        }
-                        else if (k > picked[1] || k < picked[0])
-                        {
-                            newFloor1.Add(item[k]);
-                        }
-                    }
-                    /// getPart2
-                    List<LINE> newFloor2 = new List<LINE>();
-                    for (int k = 0; k < item.Count; k++)
-                    {
-                        if (k == picked[0])
-                        {
-                            LINE offSetLine = splitLines[0][1];
-                            offSetLine.ResetParameters(newLine2.GetEndPoint(), "StartPoint");
-                            newFloor2.Add(offSetLine);
-                        }
-                        else if (k == picked[1])
-                        {
-                            LINE offSetLine = splitLines[1][0];
-                            offSetLine.ResetParameters(newLine2.GetStartPoint(), "EndPoint");
-                            newFloor2.Add(offSetLine);
-                            newFloor2.Add(newLine2);
-                        }
-                        else if (k < picked[1] && k > picked[0])
-                        {
-                            newFloor2.Add(item[k]);
-                        }
-                    }
-                    newFloors.Add(newFloor1);
-                    newFloors.Add(newFloor2);
+                    Res.Add(floors);
                 }
             }
 
-            var nnew = takeOffRecored.OrderByDescending(m => m);
-            foreach (var ii in takeOffRecored.OrderByDescending(m => m))
-            {
-                Result.RemoveAt(ii);
-            }
+            return Res;
 
-            foreach (List<LINE> item in newFloors)
-            {
-                Result.Add(item);
-            }
-
-
-            return Result;
         }
 
 
@@ -178,7 +250,7 @@ namespace _6_ReadDWG
         /// 取得所有的梁(水平與垂直向)
         /// </summary>
         /// <returns></returns>
-        private List<LINE> GetAllBeams()
+        private List<LINE> GetAllBeams(Level targetLevel_)
         {
             FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
             collector.OfCategory(BuiltInCategory.OST_StructuralFraming);
@@ -189,32 +261,67 @@ namespace _6_ReadDWG
             {
                 try
                 {
-                    LocationCurve Locurve = beam.Location as LocationCurve;
-                    Line line = Locurve.Curve as Line;
-                    LINE LINE = new LINE(line.Origin, new XYZ(line.Origin.X + line.Length * line.Direction.X,
-                                                              line.Origin.Y + line.Length * line.Direction.Y,
-                                                              line.Origin.Z + line.Length * line.Direction.Z));
-
-                    ElementType type = revitDoc.GetElement(beam.GetTypeId()) as ElementType;
+                    ///// 取得梁的Level
                     Parameter mLevel = beam.get_Parameter(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM);
                     string levelName = mLevel.AsValueString();
+
+                    //// 取得梁的類型與其寬度
+                    ElementType type = revitDoc.GetElement(beam.GetTypeId()) as ElementType;
+                    Parameter b = type.LookupParameter("b");
+                    double width = b.AsDouble();
+
+
+
+                    ///檢查梁中心線是否有偏移 
+                    BuiltInParameter paraIndex = BuiltInParameter.START_Y_JUSTIFICATION;
+                    Parameter p1 = beam.get_Parameter(paraIndex);
+                    string offset = p1.AsValueString();
+
+                    // 取得梁偏移量
+                    BuiltInParameter paraIndex1 = BuiltInParameter.STRUCTURAL_BEAM_END0_ELEVATION;
+                    Parameter of1 = beam.get_Parameter(paraIndex1);
+                    string offset1 = of1.AsValueString();
+                    BuiltInParameter paraIndex2 = BuiltInParameter.STRUCTURAL_BEAM_END1_ELEVATION;
+                    Parameter of2 = beam.get_Parameter(paraIndex2);
+                    string offset2 = of2.AsValueString();
+
+                    if (offset1 != offset2) continue;
+
+
+
+                    double shift = Convert.ToDouble(offset1) / 304.8;
+
+                    LocationCurve Locurve = beam.Location as LocationCurve;
+                    Line line = Locurve.Curve as Line;
+
+                    XYZ direction = line.Direction;
+
+                    XYZ VertiDir = offset == "左" ? new XYZ(line.Direction.Y, -line.Direction.X, line.Direction.Z) :
+                                   offset == "右" ? new XYZ(-line.Direction.Y, line.Direction.X, line.Direction.Z) : line.Direction;
+
+
+                    XYZ pp1 = line.GetEndPoint(0);
+                    XYZ pp2 = line.GetEndPoint(1);
+
+                    ///Ori Points
+                    XYZ stPoint = new XYZ(pp1.X + width / 2 * VertiDir.X,
+                                          pp1.Y + width / 2 * VertiDir.Y,
+                                          pp1.Z + width / 2 * VertiDir.Z);
+
+                    XYZ enPoint = new XYZ(pp1.X + line.Length * line.Direction.X + width / 2 * VertiDir.X,
+                                          pp1.Y + line.Length * line.Direction.Y + width / 2 * VertiDir.Y,
+                                          pp1.Z + line.Length * line.Direction.Z + width / 2 * VertiDir.Z);
+
+                    LINE LINE = new LINE(stPoint, enPoint);
+
                     LINE.Name = beam.Name;
                     LINE.LevelName = levelName;
+                    LINE.Width = width;
 
-                    //to get width of section
-                    Parameter b = type.LookupParameter("b");
-                    LINE.Width = b.AsDouble();
-
-                    ////to get height of section
-                    //Parameter h = type.LookupParameter("h");
-                    //double height = h.AsDouble(); 
 
                     if (Math.Round(LINE.GetStartPoint().Z, 3) == Math.Round(LINE.GetEndPoint().Z, 3))
                     {
-                        if (LINE.GetDirection().X == 1 || LINE.GetDirection().Y == 1 || LINE.GetDirection().X == -1 || LINE.GetDirection().Y == -1)
-                        {
-                            Beams.Add(LINE);
-                        }
+                        Beams.Add(LINE);
                     }
 
                 }
@@ -225,6 +332,9 @@ namespace _6_ReadDWG
 
             }
             return Beams;
+
+
+
         }
 
         /// <summary>
@@ -235,13 +345,29 @@ namespace _6_ReadDWG
         private List<LINE> GetTargetFloorBeams(Level targetLevel_)
         {
             double targetLevel = targetLevel_.Elevation;
-            List<LINE> BEAMS = GetAllBeams();
+            List<LINE> BEAMS = GetAllBeams(targetLevel_);
 
             var beams = from bb in BEAMS
                         where bb.LevelName == targetLevel_.Name
                         select bb;
 
-            return beams.ToList();
+            List<LINE> Beams_ = beams.ToList();
+            double minEv = Beams_.Min(t => t.GetStartPoint().Z);
+
+            List<LINE> newBeam = new List<LINE>();
+            foreach (LINE item in Beams_)
+            {
+                XYZ newSt = new XYZ(item.GetStartPoint().X, item.GetStartPoint().Y, minEv);
+                XYZ newEn = new XYZ(item.GetEndPoint().X, item.GetEndPoint().Y, minEv);
+                LINE newLine = new LINE(newSt, newEn);
+
+                newLine.Name = item.Name;
+                newLine.LevelName = item.LevelName;
+                newLine.Width = item.Width;
+                newBeam.Add(newLine);
+            }
+
+            return newBeam;
         }
 
         /// <summary>
@@ -279,113 +405,109 @@ namespace _6_ReadDWG
         /// </summary>
         /// <param name="BEAMS"></param>
         /// <returns></returns>
-        private List<List<LINE>> GetBeamGroup(List<LINE> BEAMS, ref List<LINE> nonSelected)
+        private List<List<LINE>> GetBeamGroup(List<LINE> BEAMS, ref List<LINE> nonSelected, double SHIFTDIST)
         {
-            double SHIFTDIST = 1000 / 304.8;
+            //double SHIFTDIST = 2000 / 304.8;
+
+            /// 計算梁的平均長度
+            //double SHIFTDIST = BEAMS.Sum(m => m.GetLength()) / BEAMS.Count / 3;
+
+            SHIFTDIST = SHIFTDIST*3 ;
 
             Dictionary<string, List<int>> pickNumbers = new Dictionary<string, List<int>>();
             Dictionary<string, List<LINE>> DictRes = new Dictionary<string, List<LINE>>();
             for (int i = 0; i < BEAMS.Count; i++)
             {
-                if (BEAMS[i].GetDirection().Y == 1 || BEAMS[i].GetDirection().Y == -1) continue;
                 int j = 0;
                 List<int> picked = new List<int>() { i };
                 List<LINE> tmpBeams = new List<LINE>();
-                if (BEAMS[i].GetDirection().X == 1)
-                {
-                    tmpBeams.Add(BEAMS[i]);
-                }
-                else
-                {
-                    tmpBeams.Add(new LINE(BEAMS[i].GetEndPoint(), BEAMS[i].GetStartPoint(), BEAMS[i].Name, BEAMS[i].LevelName, BEAMS[i].Width));
-                }
+                tmpBeams.Add(BEAMS[i]);
+                string direction = "";
 
                 while (j < BEAMS.Count)
                 {
+                    if (tmpBeams.Count > 1 && CMPPoints(tmpBeams[0].GetStartPoint(), tmpBeams[tmpBeams.Count - 1].GetEndPoint(), SHIFTDIST))
+                    {
+                        break;
+                    }
+
                     LINE target = tmpBeams[tmpBeams.Count - 1];
                     List<int> PickedTmp = new List<int>();
                     List<LINE> ResTmp = GetClosedBeams(BEAMS, target, ref PickedTmp, picked, SHIFTDIST);
-                    if (target.GetDirection().X == 1)
+                    JudgeDir(tmpBeams, ref direction);
+                    List<double> angle = new List<double>();
+                    for (int p = 0; p < ResTmp.Count; p++)
                     {
-                        LINE res1 = ResTmp.Find(m => m.GetDirection().Y == -1);
-                        LINE res = res1 == null ? ResTmp.Find(m => m.GetDirection().X == 1) : res1;
-                        if (res != null)
+                        XYZ tarDir = target.GetDirection();
+                        XYZ itemDir = ResTmp[p].GetDirection();
+                        XYZ CrossRes = GetCross(tarDir, itemDir);
+
+                        double DotRes = -tarDir.X * itemDir.X + -tarDir.Y * itemDir.Y;
+                        double ang = Math.Acos(Math.Round(DotRes, 2)) * 180 / Math.PI;
+                        if (CrossRes.Z > 0)
                         {
-                            int po1 = FindAllIndexof(ResTmp, res)[0];
-                            tmpBeams.Add(ResTmp[po1]);
-                            picked.Add(PickedTmp[po1]);
-                            j = 0;
-                        }
-                        else
-                        {
-                            j++;
-                        }
-                    }
-                    else if (target.GetDirection().Y == -1)
-                    {
-                        LINE res1 = ResTmp.Find(m => m.GetDirection().X == -1);
-                        LINE res = res1 == null ? ResTmp.Find(m => m.GetDirection().Y == -1) : res1;
-                        if (res != null)
-                        {
-                            int po1 = FindAllIndexof(ResTmp, res)[0];
-                            tmpBeams.Add(ResTmp[po1]);
-                            picked.Add(PickedTmp[po1]);
-                            j = 0;
-                        }
-                        else
-                        {
-                            j++;
-                        }
-                    }
-                    else if (target.GetDirection().X == -1)
-                    {
-                        LINE res1 = ResTmp.Find(m => m.GetDirection().Y == 1);
-                        LINE res = res1 == null ? ResTmp.Find(m => m.GetDirection().X == -1) : res1;
-                        if (res != null)
-                        {
-                            int po1 = FindAllIndexof(ResTmp, res)[0];
-                            tmpBeams.Add(ResTmp[po1]);
-                            picked.Add(PickedTmp[po1]);
-                            j = 0;
-                        }
-                        else
-                        {
-                            j++;
+                            ang = 360 - ang;
                         }
 
+                        if (direction == "逆")
+                        {
+                            ang = 360 - ang;
+                        }
+                        angle.Add(ang);
                     }
-                    else if (target.GetDirection().Y == 1)
+
+                    if (ResTmp.Count != 0)
                     {
-                        if (CMPPoints(tmpBeams[0].GetStartPoint(), tmpBeams[tmpBeams.Count - 1].GetEndPoint(), SHIFTDIST))
-                        {
-                            j = BEAMS.Count + 100;
-                        }
-                        else
-                        {
-                            LINE res = ResTmp.Find(m => m.GetDirection().Y == 1);
-                            if (res != null)
-                            {
-                                int po1 = FindAllIndexof(ResTmp, res)[0];
-                                tmpBeams.Add(ResTmp[po1]);
-                                picked.Add(PickedTmp[po1]);
-                            }
-                            else
-                            {
-                                j++;
-                            }
-                        }
+                        double minAng = angle.Min();
+                        int po1 = FindAllIndexof(angle, minAng)[0];
+                        tmpBeams.Add(ResTmp[po1]);
+                        picked.Add(PickedTmp[po1]);
+                        j = 0;
                     }
                     else
                     {
                         j++;
                     }
+
+
                 }
+
                 DictRes[i.ToString()] = tmpBeams;
                 pickNumbers[i.ToString()] = picked;
             }
 
             return TakeOffSameRegion(ref nonSelected, pickNumbers, DictRes, BEAMS, SHIFTDIST);
 
+        }
+
+        private string JudgeDir(List<LINE> tmpBeams, ref string direction)
+        {
+            if (direction != "") return direction;
+
+
+            for (int i = 0; i < tmpBeams.Count - 1; i++)
+            {
+                XYZ dir = GetCross(tmpBeams[i].GetDirection(), tmpBeams[i + 1].GetDirection());
+                if (Math.Abs(Math.Round(dir.Z * 10)) > 1 && dir.Z > 0)
+                {
+                    direction = "逆";
+                    return direction;
+                }
+                else if (Math.Abs(Math.Round(dir.Z * 10)) > 1 && dir.Z < 0)
+                {
+                    direction = "順";
+                    return direction;
+                }
+
+            }
+            return direction;
+        }
+
+        private XYZ GetCross(XYZ tarDir, XYZ itemDir)
+        {
+            return new XYZ(tarDir.Y * itemDir.Z - tarDir.Z * itemDir.Y,
+                                 -(tarDir.X * itemDir.Z - tarDir.Z * itemDir.X),
+                                   tarDir.X * itemDir.Y - tarDir.Y * itemDir.X);
         }
 
         /// <summary>
@@ -416,7 +538,7 @@ namespace _6_ReadDWG
                     double Len = IsSamePoint(tmpBeams[0].GetStartPoint(), tmpBeams[tmpBeams.Count - 1].GetEndPoint()) ?
                                  0 : (new LINE(tmpBeams[0].GetStartPoint(), tmpBeams[tmpBeams.Count - 1].GetEndPoint())).GetLength();
 
-                    if (ii != j && sumOf[ii] == sumOf[j])
+                    if (ii != j && DictRes[keys[ii]].Count == DictRes[keys[j]].Count && sumOf[ii] == sumOf[j])
                     {
                         flag[j] = -1;
                     }
@@ -454,7 +576,33 @@ namespace _6_ReadDWG
             {
                 nonSelected.Add(BEAMs[item]);
             }
-            return RESULT;
+
+
+            int kk = 0;
+            List<int> takeOff = new List<int>();
+            foreach (List<LINE> item in RESULT)
+            {
+                if (item.Count < 3)
+                {
+                    foreach (LINE item2 in item)
+                    {
+                        nonSelected.Add(item2);
+                    }
+                    takeOff.Add(kk);
+                }
+                kk++;
+            }
+
+            List<List<LINE>> RESULT_f = new List<List<LINE>>();
+            for (int i = 0; i < RESULT.Count; i++)
+            {
+                if (!takeOff.Contains(i))
+                {
+                    RESULT_f.Add(RESULT[i]);
+                }
+            }
+
+            return RESULT_f;
         }
 
 
@@ -501,7 +649,7 @@ namespace _6_ReadDWG
             List<List<LINE>> NewBeamGroup = new List<List<LINE>>();
             foreach (List<LINE> Beams in BeamGroup)
             {
-                if (Beams.Count < 4) continue;
+                //if (Beams.Count < 4) continue;
 
                 double sumOfX = Beams.Sum(item => item.GetStartPoint().X);
                 double sumOfY = Beams.Sum(item => item.GetStartPoint().Y);
@@ -514,7 +662,7 @@ namespace _6_ReadDWG
                 }
                 NewBeamGroup.Add(tmpBeams);
             }
-
+            SaveTmp(NewBeamGroup);
             ConnectedEdge(ref NewBeamGroup);
 
             return NewBeamGroup;
@@ -531,20 +679,68 @@ namespace _6_ReadDWG
                 Dictionary<int, LINE> tmpAddLines = new Dictionary<int, LINE>();
                 for (int i = 0; i < Beams.Count; i++)
                 {
-                    LINE L1 = Beams[i];
-                    LINE L2 = i + 1 == Beams.Count ? Beams[0] : Beams[i + 1];
-                    XYZ crossPoint = L1.GetCrossPoint(L2);
-                    Beams[i].ResetParameters(crossPoint, "EndPoint");
-                    if (i + 1 == Beams.Count)
+                    try
                     {
-                        Beams[0].ResetParameters(crossPoint, "StartPoint");
+                        LINE L1 = Beams[i];
+                        LINE L2 = i + 1 == Beams.Count ? Beams[0] : Beams[i + 1];
+                        XYZ crossPoint = L1.GetCrossPoint(L2);
+                        Beams[i].ResetParameters(crossPoint, "EndPoint");
+                        if (i + 1 == Beams.Count)
+                        {
+                            Beams[0].ResetParameters(crossPoint, "StartPoint");
+                        }
+                        else
+                        {
+                            Beams[i + 1].ResetParameters(crossPoint, "StartPoint");
+                        }
+
                     }
-                    else
+                    catch (Exception)
                     {
-                        Beams[i + 1].ResetParameters(crossPoint, "StartPoint");
+
                     }
                 }
             }
+        }
+
+        private List<LINE> AdjustCreatedFloorEdge(List<LINE> Beams)
+        {
+            ///統整同方向
+            List<LINE> tmpBeam = new List<LINE>(Beams);
+            List<LINE> newBeam = new List<LINE>();
+            tmpBeam.Add(tmpBeam[0]);
+            List<int> igPo = new List<int>();
+
+            for (int i = 0; i < Beams.Count; i++)
+            {
+                if (igPo.Contains(i)) continue;
+
+                if (tmpBeam[i].GetSlope() != tmpBeam[i + 1].GetSlope())
+                {
+                    newBeam.Add(tmpBeam[i]);
+                }
+                else
+                {
+                    XYZ p1 = tmpBeam[i].GetStartPoint();
+                    XYZ p2 = null;
+                    int j = i;
+                    while (j < Beams.Count)
+                    {
+                        if (tmpBeam[j].GetSlope() == tmpBeam[j + 1].GetSlope())
+                        {
+                            p2 = tmpBeam[j + 1].GetEndPoint();
+                            igPo.Add(j + 1);
+                        }
+                        else
+                        {
+                            j = Beams.Count;
+                        }
+                        j++;
+                    }
+                    newBeam.Add(new LINE(p1, p2));
+                }
+            }
+            return newBeam;
         }
 
         /// <summary>
@@ -555,15 +751,48 @@ namespace _6_ReadDWG
         /// <param name="floor_type"></param>
         private void CreateFloor(Level targetLevel, List<List<LINE>> NewBeamGroup, FloorType floor_type)
         {
-
             List<CurveArray> floorCurves = new List<CurveArray>();
             foreach (List<LINE> Beams in NewBeamGroup)
             {
-                CurveArray curveArray = new CurveArray();
-                //floorCurves.Add(curveArray); 
                 try
                 {
-                    foreach (LINE beam in Beams)
+                    List<LINE> newBeam_ = AdjustCreatedFloorEdge(Beams);
+                List<LINE> newBeam_2 = AdjustCreatedFloorEdge(newBeam_);
+                List<LINE> newBeam_3 = new List<LINE>();
+                foreach (LINE item in newBeam_2)
+                {
+                    if (item.GetLength() > 0.01)
+                    {
+                        newBeam_3.Add(item);
+                    }
+                }
+
+                List<LINE> newBeam = new List<LINE>();
+                newBeam_3.Add(newBeam_3[0]);
+                for (int i = 0; i < newBeam_3.Count - 1; i++)
+                {
+                    if (IsSamePoint(newBeam_3[i].GetStartPoint(), newBeam_3[i + 1].GetStartPoint()) &&
+                        IsSamePoint(newBeam_3[i].GetEndPoint(), newBeam_3[i + 1].GetEndPoint()))
+                    {
+
+                    }
+                    else if (IsSamePoint(newBeam_3[i].GetStartPoint(), newBeam_3[i + 1].GetEndPoint()) &&
+                             IsSamePoint(newBeam_3[i].GetEndPoint(), newBeam_3[i + 1].GetStartPoint()))
+                    {
+
+                    }
+                    else
+                    {
+                        newBeam.Add(newBeam_3[i]);
+                    }
+                }
+
+
+                    // SaveTmp(new List<List<LINE>> { newBeam });
+
+                    CurveArray curveArray = new CurveArray();
+                    //floorCurves.Add(curveArray); 
+                    foreach (LINE beam in newBeam)
                     {
                         curveArray.Append(Line.CreateBound(beam.GetStartPoint(), beam.GetEndPoint()));
                     }
@@ -579,7 +808,6 @@ namespace _6_ReadDWG
                         this.revitDoc.Create.NewFloor(curveArray, floor_type, targetLevel, false);
                         trans.Commit();
                     }
-
                 }
                 catch (Exception)
                 {
@@ -598,22 +826,50 @@ namespace _6_ReadDWG
         /// <returns></returns>
         private bool IsInner(XYZ point, List<LINE> boundary)
         {
-            double minX = boundary.Min(m => m.GetStartPoint().X);
-            double maxX = boundary.Max(m => m.GetStartPoint().X);
-            double minY = boundary.Min(m => m.GetStartPoint().Y);
-            double maxY = boundary.Max(m => m.GetStartPoint().Y);
 
-            if (point.X > minX && point.X < maxX && point.Y > minY && point.Y < maxY)
+            double Len = boundary.Sum(t => t.GetLength());
+            LINE shotLine = new LINE(point, new XYZ(0, 1, boundary[0].GetStartPoint().Z), Len);
+            int num1 = 0;
+            foreach (LINE item in boundary)
             {
-                return true;
+                XYZ crossPoint = shotLine.GetCrossPoint(item);
+                if (shotLine.IsPointInLine(crossPoint) && item.IsPointInLine(crossPoint))
+                {
+                    num1++;
+                }
             }
+
+            LINE shotLine2 = new LINE(point, new XYZ(0, -1, boundary[0].GetStartPoint().Z), Len);
+            int num2 = 0;
+            foreach (LINE item in boundary)
+            {
+                XYZ crossPoint = shotLine2.GetCrossPoint(item);
+                if (shotLine2.IsPointInLine(crossPoint) && item.IsPointInLine(crossPoint))
+                {
+                    num2++;
+                }
+            }
+
+            if (num1 % 2 == 1 && num2 % 2 == 1) return true;
+            if ((num1 + num2) % 2 == 1) return true;
+            //double minX = boundary.Min(m => m.GetStartPoint().X);
+            //double maxX = boundary.Max(m => m.GetStartPoint().X);
+            //double minY = boundary.Min(m => m.GetStartPoint().Y);
+            //double maxY = boundary.Max(m => m.GetStartPoint().Y);
+
+            //if (point.X > minX && point.X < maxX && point.Y > minY && point.Y < maxY)
+            //{
+            //    return true;
+            //}
             return false;
 
         }
 
         private bool IsSamePoint(XYZ point1, XYZ point2)
         {
-            if (point1.X == point2.X && point1.Y == point2.Y && point1.Z == point2.Z)
+            if (Math.Round(point1.X,3) == Math.Round(point2.X,3) && 
+                Math.Round(point1.Y,3) == Math.Round(point2.Y,3) && 
+                Math.Round(point1.Z,3) == Math.Round(point2.Z,3))
             {
                 return true;
             }
@@ -660,7 +916,8 @@ namespace _6_ReadDWG
         private Dictionary<string, List<LINE>> GetAllColumnsBoundary(Level targetLevel)
         {
             FilteredElementCollector collector = new FilteredElementCollector(this.revitDoc);
-            collector.OfCategory(BuiltInCategory.OST_Columns);
+
+            collector.OfCategory(BuiltInCategory.OST_StructuralColumns);
             collector.OfClass(typeof(FamilyInstance));
 
             IList<Element> columns = collector.ToElements();
@@ -756,33 +1013,51 @@ namespace _6_ReadDWG
                     for (int jj = 0; jj < floor.Count; jj++)
                     {
                         LINE floorEdge = floor[jj];
-                        if (floorEdge.GetSlope() == columnEdge.GetSlope()) continue;
+                        if (Math.Round(floorEdge.GetSlope(), 3) == Math.Round(columnEdge.GetSlope(), 3)) continue;
+                        if (Math.Abs(Math.Round(floorEdge.GetDirection().X, 3)) == Math.Abs(Math.Round(columnEdge.GetDirection().X, 3)) &&
+                            Math.Abs(Math.Round(floorEdge.GetDirection().Y, 3)) == Math.Abs(Math.Round(columnEdge.GetDirection().Y, 3))) continue;
+
                         XYZ crossPoint = floorEdge.GetCrossPoint(columnEdge);
 
-                        if (floorEdge.IsPointInLine(crossPoint) && columnEdge.IsPointInLine(crossPoint))
-                        {
-                            XYZ innerPoint = IsInner(columnEdge.GetStartPoint(), floor) ?
-                                             columnEdge.GetStartPoint() : columnEdge.GetEndPoint();
 
-                            double dis1 = (crossPoint - floorEdge.GetStartPoint()).GetLength();
-                            double dis2 = (crossPoint - floorEdge.GetEndPoint()).GetLength();
-                            LINE newLine = null;
-                            List<LINE> newList = new List<LINE>();
-                            if (dis1 > dis2)
+                        try
+                        {
+
+                            if (floorEdge.IsPointInLine(crossPoint) && columnEdge.IsPointInLine(crossPoint))
                             {
-                                floorEdge.ResetParameters(crossPoint, "EndPoint");
-                                newLine = new LINE(crossPoint, innerPoint);
-                                newList.Add(floorEdge);
-                                newList.Add(newLine);
+                                XYZ innerPoint = IsInner(columnEdge.GetStartPoint(), floor) ?
+                                                 columnEdge.GetStartPoint() : columnEdge.GetEndPoint();
+
+                                double dis1 = (crossPoint - floorEdge.GetStartPoint()).GetLength();
+                                double dis2 = (crossPoint - floorEdge.GetEndPoint()).GetLength();
+                                LINE newLine = null;
+                                List<LINE> newList = new List<LINE>();
+                                if (dis1 > dis2)
+                                {
+                                    floorEdge.ResetParameters(crossPoint, "EndPoint");
+                                    newLine = new LINE(crossPoint, innerPoint);
+                                    newList.Add(floorEdge);
+                                    if (dis2 != 0)
+                                    {
+                                        newList.Add(newLine);
+                                    }
+                                }
+                                else
+                                {
+                                    newLine = new LINE(innerPoint, crossPoint);
+                                    floorEdge.ResetParameters(crossPoint, "StartPoint");
+                                    if (dis1 != 0)
+                                    {
+                                        newList.Add(newLine);
+                                    }
+                                    newList.Add(floorEdge);
+                                }
+                                tmpData[jj] = newList;
                             }
-                            else
-                            {
-                                newLine = new LINE(innerPoint, crossPoint);
-                                floorEdge.ResetParameters(crossPoint, "StartPoint");
-                                newList.Add(newLine);
-                                newList.Add(floorEdge);
-                            }
-                            tmpData[jj] = newList;
+                        }
+                        catch (Exception)
+                        {
+
                         }
                     }
 
@@ -848,7 +1123,7 @@ namespace _6_ReadDWG
                             {
                                 Plane plane = surface as Plane;
                                 /// 取得基準面
-                                if (plane.Normal.X == 0 && plane.Normal.Y == 0 && plane.Normal.Z == -1)
+                                if (Math.Round(plane.Normal.X, 2) == 0 && Math.Round(plane.Normal.Y, 2) == 0 && Math.Round(plane.Normal.Z, 2) == -1)
                                 {
                                     curveLoop = face.GetEdgesAsCurveLoops()[0];
                                 }
@@ -864,14 +1139,6 @@ namespace _6_ReadDWG
 
             return curveLoop;
         }
-
-
-
-
-
-
-
-
 
 
 
@@ -918,6 +1185,20 @@ namespace _6_ReadDWG
                 kk++;
             }
 
+        }
+
+        private bool IsCloseEndsPoint(LINE line, XYZ crossPoint, double SHIFT)
+        {
+            double Len1 = Math.Sqrt((line.GetStartPoint().X - crossPoint.X) * (line.GetStartPoint().X - crossPoint.X) +
+                                    (line.GetStartPoint().Y - crossPoint.Y) * (line.GetStartPoint().Y - crossPoint.Y));
+            double Len2 = Math.Sqrt((line.GetEndPoint().X - crossPoint.X) * (line.GetEndPoint().X - crossPoint.X) +
+                                    (line.GetEndPoint().Y - crossPoint.Y) * (line.GetEndPoint().Y - crossPoint.Y));
+            if (Len1 < SHIFT || Len2 < SHIFT)
+            {
+                return true;
+            }
+
+            return false;
         }
 
     }

@@ -23,7 +23,7 @@ using Autodesk.Revit.UI.Selection;
 /// 
 namespace _6_ReadDWG
 {
-    
+
 
     /// <summary>
     /// Create Revit Element or Family
@@ -38,6 +38,37 @@ namespace _6_ReadDWG
         public CreateObjects(Document _revitDoc)
         {
             this.revitDoc = _revitDoc;
+        }
+
+
+        /// <summary>
+        /// Create Column 
+        /// </summary>
+        /// <param name="Type"></param>
+        /// <param name="baseLevel"></param>
+        /// <param name="topLevel"></param>
+        /// <param name="points"></param>
+        public void CreateLight(FamilySymbol Type, Level baseLevel, XYZ points)
+        {
+
+            if (!Type.IsActive)
+            {
+                using (Transaction trans = new Transaction(revitDoc))
+                {
+                    trans.Start("Activate Family instance");
+                    Type.Activate();
+                    trans.Commit();
+                }
+
+            }
+            using (Transaction trans = new Transaction(revitDoc))
+            {
+                trans.Start("Create Column");
+                FamilyInstance familyInstance = null;
+                familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, baseLevel, StructuralType.NonStructural); 
+                //familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, StructuralType.NonStructural);
+                trans.Commit();
+            }
         }
 
         /// <summary>
@@ -98,7 +129,7 @@ namespace _6_ReadDWG
                 XYZ p1 = new XYZ(points.GetStartPoint().X, points.GetStartPoint().Y, baseLevel.Elevation);
                 XYZ p2 = new XYZ(points.GetEndPoint().X, points.GetEndPoint().Y, baseLevel.Elevation);
                 familyInstance = revitDoc.Create.NewFamilyInstance(Line.CreateBound(p1, p2), Type, baseLevel, StructuralType.Beam);
-                
+
 
                 trans.Commit();
             }
@@ -125,6 +156,24 @@ namespace _6_ReadDWG
             return this.GetFamilyTypes(doc, BuiltInCategory.OST_StructuralFraming);
         }
 
+
+
+        /// <summary>
+        /// Get Column Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public Dictionary<string, List<FamilySymbol>> GetDocLightTypes(Document doc)
+        {
+
+            return new FilteredElementCollector(doc)
+                        .WherePasses(new ElementClassFilter(typeof(FamilySymbol)))
+                        .Cast<FamilySymbol>()
+                        .GroupBy(e => e.Family.Name)
+                        .ToDictionary(e => e.Key, e => e.ToList()); ;
+        }
+
+
         /// <summary>
         /// Get Column Types
         /// </summary>
@@ -132,9 +181,10 @@ namespace _6_ReadDWG
         /// <returns></returns>
         public Dictionary<string, List<FamilySymbol>> GetDocColumnsTypes(Document doc)
         {
+
             return this.GetFamilyTypes(doc, BuiltInCategory.OST_Columns);
         }
-         
+
 
         /// <summary>
         /// Get Level
@@ -168,12 +218,12 @@ namespace _6_ReadDWG
                             .WherePasses(new ElementCategoryFilter(cat))
                             .Cast<FamilySymbol>()
                             .GroupBy(e => e.Family.Name)
-                            .ToDictionary(e => e.Key, e => e.ToList()); ;
+                            .ToDictionary(e => e.Key, e => e.ToList());
         }
 
     }
 
-     
+
     public static class PreProcessing
     {
 
@@ -219,14 +269,14 @@ namespace _6_ReadDWG
                     }
                     else if (cmpLine.GetEndPoint().X == baseLine.GetEndPoint().X && cmpLine.GetEndPoint().Y == baseLine.GetEndPoint().Y)
                     {
-                        baseLine = new LINE ( cmpLine.GetEndPoint(), cmpLine.GetStartPoint() );
+                        baseLine = new LINE(cmpLine.GetEndPoint(), cmpLine.GetStartPoint());
                         tmpData.Add(baseLine);
                         is_pickup[j] = 1;
                         j = 0;
                     }
                     else if (tmpData[0].GetStartPoint().X == cmpLine.GetStartPoint().X && tmpData[0].GetStartPoint().Y == cmpLine.GetStartPoint().Y)
                     {
-                        tmpData.Insert(0, new LINE ( cmpLine.GetEndPoint(), cmpLine.GetStartPoint() ));
+                        tmpData.Insert(0, new LINE(cmpLine.GetEndPoint(), cmpLine.GetStartPoint()));
                         is_pickup[j] = 1;
                         j = 0;
                     }
@@ -286,14 +336,14 @@ namespace _6_ReadDWG
         /// <param name="V_Beams"></param>
         public static List<LINE> GetBeamDrawLines(List<List<LINE>> Collect, List<LINE> H_Direction_Lines, List<LINE> V_Direction_Lines)
         {
-            List<LINE> RESULT = new List<LINE>(); 
+            List<LINE> RESULT = new List<LINE>();
 
             /// Collect Part
             foreach (List<LINE> co in Collect)
             {
                 if (co.Count() <= 4)
                 {
-                     
+
                     LINE line1 = co[0];
                     LINE line2 = co[1];
                     XYZ p1 = null;
@@ -305,17 +355,17 @@ namespace _6_ReadDWG
                         if (line1.GetStartPoint().Y == line1.GetEndPoint().Y)
                         {
                             p1 = new XYZ(line1.GetStartPoint().X, (line1.GetStartPoint().Y + line2.GetEndPoint().Y) / 2, 0);
-                            p2 = new XYZ(line1.GetEndPoint().X, (line1.GetStartPoint().Y + line2.GetEndPoint().Y) / 2, 0); 
+                            p2 = new XYZ(line1.GetEndPoint().X, (line1.GetStartPoint().Y + line2.GetEndPoint().Y) / 2, 0);
                         }
                         else if (line1.GetStartPoint().X == line1.GetEndPoint().X)
                         {
                             p1 = new XYZ((line1.GetStartPoint().X + line2.GetEndPoint().X) / 2, line1.GetStartPoint().Y, 0);
-                            p2 = new XYZ((line1.GetStartPoint().X + line2.GetEndPoint().X) / 2, line1.GetEndPoint().Y, 0); 
+                            p2 = new XYZ((line1.GetStartPoint().X + line2.GetEndPoint().X) / 2, line1.GetEndPoint().Y, 0);
                         }
                     }
                     else
                     {
-                        if(line2.GetStartPoint().Y == line2.GetEndPoint().Y)
+                        if (line2.GetStartPoint().Y == line2.GetEndPoint().Y)
                         {
                             p1 = new XYZ(line2.GetStartPoint().X, (line1.GetStartPoint().Y + line2.GetEndPoint().Y) / 2, 0);
                             p2 = new XYZ(line2.GetEndPoint().X, (line1.GetStartPoint().Y + line2.GetEndPoint().Y) / 2, 0);
@@ -324,20 +374,20 @@ namespace _6_ReadDWG
                         else if (line2.GetStartPoint().X == line2.GetEndPoint().X)
                         {
                             p1 = new XYZ((line1.GetStartPoint().X + line1.GetEndPoint().X) / 2, line2.GetStartPoint().Y, 0);
-                            p2 = new XYZ((line1.GetStartPoint().X + line1.GetEndPoint().X) / 2, line2.GetEndPoint().Y, 0); 
+                            p2 = new XYZ((line1.GetStartPoint().X + line1.GetEndPoint().X) / 2, line2.GetEndPoint().Y, 0);
                         }
                     }
 
                     if (p1 != null)
                     {
-                        RESULT.Add(new LINE( p1, p2 ));
-                    } 
-                } 
+                        RESULT.Add(new LINE(p1, p2));
+                    }
+                }
             }
 
             /// H-Beam Part
             List<LINE> sorted_H = H_Direction_Lines.OrderBy(e => e.GetStartPoint().Y).ToList();
-            List<LINE>  H_Beams = new List<LINE>();
+            List<LINE> H_Beams = new List<LINE>();
             int[] is_pickup = new int[sorted_H.Count()];
             for (int i = 0; i < sorted_H.Count(); i++)
             {
@@ -359,15 +409,15 @@ namespace _6_ReadDWG
                         is_pickup[j] = 1;
                         XYZ p1 = new XYZ((baseLine.GetStartPoint().X + cmpLine.GetStartPoint().X) / 2, (baseLine.GetStartPoint().Y + cmpLine.GetStartPoint().Y) / 2, 0);
                         XYZ p2 = new XYZ((baseLine.GetEndPoint().X + cmpLine.GetEndPoint().X) / 2, (baseLine.GetEndPoint().Y + cmpLine.GetEndPoint().Y) / 2, 0);
-                        H_Beams.Add(new LINE ( p1, p2 ));
-                        RESULT.Add(new LINE ( p1, p2 ));
+                        H_Beams.Add(new LINE(p1, p2));
+                        RESULT.Add(new LINE(p1, p2));
                         break;
                     }
                 }
             }
 
             /// V-Beam Part
-            List<LINE>  V_Beams = new List<LINE>();
+            List<LINE> V_Beams = new List<LINE>();
             List<LINE> sorted_V = V_Direction_Lines.OrderBy(e => e.GetStartPoint().X).ToList();
             is_pickup = new int[sorted_V.Count()];
             for (int i = 0; i < sorted_V.Count(); i++)
@@ -381,8 +431,8 @@ namespace _6_ReadDWG
 
                     LINE cmpLine = sorted_V[j];
 
-                    if (baseLine.GetSlope() == - cmpLine.GetSlope()) 
-                        cmpLine = new LINE(cmpLine.GetEndPoint(), cmpLine.GetStartPoint()); 
+                    if (baseLine.GetSlope() == -cmpLine.GetSlope())
+                        cmpLine = new LINE(cmpLine.GetEndPoint(), cmpLine.GetStartPoint());
 
                     if (baseLine.GetStartPoint().Y == cmpLine.GetStartPoint().Y && baseLine.GetEndPoint().Y == cmpLine.GetEndPoint().Y)
                     {
@@ -390,8 +440,8 @@ namespace _6_ReadDWG
                         is_pickup[j] = 1;
                         XYZ p1 = new XYZ((baseLine.GetStartPoint().X + cmpLine.GetStartPoint().X) / 2, (baseLine.GetStartPoint().Y + cmpLine.GetStartPoint().Y) / 2, 0);
                         XYZ p2 = new XYZ((baseLine.GetEndPoint().X + cmpLine.GetEndPoint().X) / 2, (baseLine.GetEndPoint().Y + cmpLine.GetEndPoint().Y) / 2, 0);
-                        V_Beams.Add(new LINE ( p1, p2 ));
-                        RESULT.Add(new LINE ( p1, p2 ));
+                        V_Beams.Add(new LINE(p1, p2));
+                        RESULT.Add(new LINE(p1, p2));
                         break;
                     }
                 }
@@ -411,7 +461,7 @@ namespace _6_ReadDWG
         /// <param name="V_Direction_Lines"></param>
         /// <param name="H_Beams"></param>
         /// <param name="V_Beams"></param>
-        public static  List<LINE> GetColumnDrawCenterPoints(List<List<LINE>> Collect)
+        public static List<LINE> GetColumnDrawCenterPoints(List<List<LINE>> Collect)
         {
 
             List<LINE> RESULT = new List<LINE>();
@@ -419,7 +469,7 @@ namespace _6_ReadDWG
             {
                 LINE LINE1 = Lines[0];
                 LINE LINE2 = Lines[1];
-                RESULT.Add(new LINE(LINE1.GetStartPoint(),LINE2.GetEndPoint()));
+                RESULT.Add(new LINE(LINE1.GetStartPoint(), LINE2.GetEndPoint()));
             }
 
 
@@ -452,7 +502,7 @@ namespace _6_ReadDWG
 
         public static double Get_Length(LINE Line)
         {
-             
+
             return Math.Sqrt(
                 (Line.GetStartPoint().X - Line.GetEndPoint().X) * (Line.GetStartPoint().X - Line.GetEndPoint().X) +
                 (Line.GetStartPoint().Y - Line.GetEndPoint().Y) * (Line.GetStartPoint().Y - Line.GetEndPoint().Y));

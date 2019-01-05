@@ -226,21 +226,21 @@ namespace _6_ReadDWG
         {
             XYZ dir1 = this.Direction;
             if (IsUseAbs && Math.Abs(Math.Round(dir1.X,3)) == Math.Abs(Math.Round(dir2.X, 3)) 
-                         && Math.Abs(Math.Round(dir1.Y, 3)) == Math.Abs(Math.Round(dir2.Y, 3)) 
-                         && Math.Abs(Math.Round(dir1.Z, 3)) == Math.Abs(Math.Round(dir2.Z, 3)))
+                         && Math.Abs(Math.Round(dir1.Y, 3)) == Math.Abs(Math.Round(dir2.Y, 3))) 
+                         //&& Math.Abs(Math.Round(dir1.Z, 3)) == Math.Abs(Math.Round(dir2.Z, 3)))
             {
                 return true;
             }
             else if (!IsUseAbs && Math.Round(dir1.X, 3) == Math.Round(dir2.X, 3) 
-                               && Math.Round(dir1.Y, 3) == Math.Round(dir2.Y, 3) 
-                               && Math.Round(dir1.Z, 3) == Math.Round(dir2.Z, 3))
+                               && Math.Round(dir1.Y, 3) == Math.Round(dir2.Y, 3))
+                               //&& Math.Round(dir1.Z, 3) == Math.Round(dir2.Z, 3))
             {
                 return true; 
             }
             return false; 
         }
 
-        private double GetDistanceFromPoint(XYZ targetPoint)
+        public double GetDistanceFromPoint(XYZ targetPoint)
         {
             double m = this.Slope;
             double b = this.GetStartPoint().Y - m * this.GetStartPoint().X;
@@ -253,8 +253,8 @@ namespace _6_ReadDWG
         {
             double m = this.Slope;
             double tmpData = 1 / Math.Sqrt(m * m + 1);
-            double newX2 = point.X + this.GetLength() * tmpData;
-            double newY2 = point.Y + m * this.GetLength() * tmpData;
+            double newX2 = point.X + this.GetLength() * this.Direction.X;
+            double newY2 = point.Y + this.GetLength() * this.Direction.Y;
             return new LINE(point, new XYZ(newX2, newY2, point.Z));
         }
 
@@ -280,22 +280,22 @@ namespace _6_ReadDWG
         {
             return Math.Sqrt(
                 (this.GetStartPoint().X - this.GetEndPoint().X) * (this.GetStartPoint().X - this.GetEndPoint().X) +
-                (this.GetStartPoint().Y - this.GetEndPoint().Y) * (this.GetStartPoint().Y - this.GetEndPoint().Y) +
-                (this.GetStartPoint().Z - this.GetEndPoint().Z) * (this.GetStartPoint().Z - this.GetEndPoint().Z)
+                (this.GetStartPoint().Y - this.GetEndPoint().Y) * (this.GetStartPoint().Y - this.GetEndPoint().Y)
+                + (this.GetStartPoint().Z - this.GetEndPoint().Z) * (this.GetStartPoint().Z - this.GetEndPoint().Z)
                 );
         }
         private double GetLength(XYZ point1, XYZ point2)
         {
             return Math.Sqrt(
                 (point1.X - point2.X) * (point1.X - point2.X) +
-                (point1.Y - point2.Y) * (point1.Y - point2.Y) +
-                (point1.Z - point2.Z) * (point1.Z - point2.Z)
+                (point1.Y - point2.Y) * (point1.Y - point2.Y)
+                + (point1.Z - point2.Z) * (point1.Z - point2.Z)
                 );
         }
 
         public double getSumOfCoordinate()
         {
-            return this.GetStartPoint().X + this.GetStartPoint().Y + this.GetStartPoint().Z + this.GetEndPoint().X + this.GetEndPoint().Y + this.GetEndPoint().Z;
+            return this.GetStartPoint().X + this.GetStartPoint().Y + this.GetEndPoint().X + this.GetEndPoint().Y + this.GetEndPoint().Z + this.GetStartPoint().Z;
         }
 
 

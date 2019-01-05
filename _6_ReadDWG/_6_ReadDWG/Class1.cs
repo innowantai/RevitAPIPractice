@@ -67,8 +67,10 @@ namespace _6_ReadDWG
 
             if (mainform.CASEName == 0)
             {
-                CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-                Creation.Main_Create(revitDoc, uidoc); 
+                CreateLightObject Createion = new CreateLightObject();
+                Createion.Main_Create(revitDoc,uidoc);
+                //CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+                //Creation.Main_Create(revitDoc, uidoc); 
             }
             else
             {
@@ -106,8 +108,10 @@ namespace _6_ReadDWG
 
             if (FormFloor.DialogResult == System.Windows.Forms.DialogResult.OK)
             { 
-                /// 取得目標樓層 
-                Level targetLevel = levels[FormFloor.cmbfloorLevel.SelectedIndex]; 
+                /// 取得梁目標樓層 
+                Level targetLevelBeam = levels[FormFloor.cmbfloorLevel.SelectedIndex];
+                /// 取得柱目標樓層 
+                Level targetLevelCol = levels[FormFloor.cmbColLevel.SelectedIndex];
 
                 /// 取得創立樓板種類
                 FloorType floor_type = floorTypes[FormFloor.cmbFloorTypes.SelectedIndex] as FloorType;
@@ -116,7 +120,7 @@ namespace _6_ReadDWG
                 CreateFloor_Version2 createFloors = new CreateFloor_Version2(revitDoc);
 
                 /// 建立樓板
-                createFloors.CreateFloor(targetLevel, floor_type);
+                createFloors.CreateFloor(targetLevelBeam, targetLevelCol, floor_type);
 
 
             }

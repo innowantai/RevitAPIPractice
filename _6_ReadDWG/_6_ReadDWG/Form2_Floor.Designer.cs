@@ -34,6 +34,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.cmbFloorTypes = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cmbColLevel = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // cmbfloorLevel
@@ -50,16 +52,16 @@
             // 
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("微軟正黑體", 14F);
-            this.label4.Location = new System.Drawing.Point(72, 161);
+            this.label4.Location = new System.Drawing.Point(56, 161);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(86, 24);
+            this.label4.Size = new System.Drawing.Size(105, 24);
             this.label4.TabIndex = 11;
-            this.label4.Text = "基準樓層";
+            this.label4.Text = "梁基準樓層";
             // 
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("新細明體", 14F);
-            this.button1.Location = new System.Drawing.Point(177, 223);
+            this.button1.Location = new System.Drawing.Point(175, 261);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(103, 41);
             this.button1.TabIndex = 14;
@@ -97,11 +99,33 @@
             this.label2.TabIndex = 17;
             this.label2.Text = "樓板類型";
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("微軟正黑體", 14F);
+            this.label3.Location = new System.Drawing.Point(56, 212);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(105, 24);
+            this.label3.TabIndex = 18;
+            this.label3.Text = "柱基準樓層";
+            // 
+            // cmbColLevel
+            // 
+            this.cmbColLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbColLevel.Font = new System.Drawing.Font("新細明體", 12F);
+            this.cmbColLevel.FormattingEnabled = true;
+            this.cmbColLevel.Location = new System.Drawing.Point(175, 214);
+            this.cmbColLevel.Name = "cmbColLevel";
+            this.cmbColLevel.Size = new System.Drawing.Size(149, 24);
+            this.cmbColLevel.TabIndex = 19;
+            // 
             // Form2_Floor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(443, 332);
+            this.Controls.Add(this.cmbColLevel);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.cmbFloorTypes);
             this.Controls.Add(this.label1);
@@ -124,5 +148,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        public System.Windows.Forms.ComboBox cmbColLevel;
     }
 }

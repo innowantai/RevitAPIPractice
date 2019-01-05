@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>_6_ReadDWG</RootNamespace>
     <AssemblyName>_6_ReadDWG</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,11 +32,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2018\RevitAPI.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2019\RevitAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="RevitAPIUI">
-      <HintPath>C:\Program Files\Autodesk\Revit 2018\RevitAPIUI.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2019\RevitAPIUI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -54,7 +55,9 @@
     <Compile Include="CreateBeamsAndColumns.cs" />
     <Compile Include="CreateFloors.cs" />
     <Compile Include="CreateFloor_Version2.cs" />
+    <Compile Include="CreateLightObject.cs" />
     <Compile Include="FailureHandler.cs" />
+    <Compile Include="FloorEdges.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -66,6 +69,12 @@
     </Compile>
     <Compile Include="Form2_Floor.Designer.cs">
       <DependentUpon>Form2_Floor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_CreateLight.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_CreateLight.Designer.cs">
+      <DependentUpon>Form_CreateLight.cs</DependentUpon>
     </Compile>
     <Compile Include="LINE.cs" />
     <Compile Include="MainForm.cs">
@@ -84,6 +93,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form2_Floor.resx">
       <DependentUpon>Form2_Floor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_CreateLight.resx">
+      <DependentUpon>Form_CreateLight.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
