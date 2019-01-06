@@ -89,7 +89,7 @@ namespace _6_ReadDWG
 
             using (Transaction trans = new Transaction(revitDoc))
             {
-                trans.Start("Create Column");
+                trans.Start("Create Family Instance");
                 foreach (XYZ points in POINTs)
                 {
                     FamilyInstance familyInstance = null;

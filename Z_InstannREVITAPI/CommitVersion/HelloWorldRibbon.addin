@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>  
+  <AddIn Type="Application">
+	<Name>HelloRevitRibbon</Name>
+    <Assembly>***REPLACE_STRING***</Assembly>
+    <ClientId>e24dc788-796a-4900-8c3a-9a318317ed90</ClientId>
+    <FullClassName>HelloRevitRibbon.Class1</FullClassName> 
+    <VendorId>ADSK</VendorId> 
+  </AddIn>
+</RevitAddIns>

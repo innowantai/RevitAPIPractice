@@ -81,12 +81,12 @@ namespace _6_ReadDWG
 
             /// Setting combox and checkbox list
             this.comboBoxes = new List<System.Windows.Forms.ComboBox>() { 
-                        this.cmbColBaseLevel,
-                        this.cmbColTopLevel, 
-                        this.cmbColCADLayers,
-                        this.cmbTopFamilyType,
-                        this.cmbColFamilyType,
-                        this.cmbColType};
+                                this.cmbColBaseLevel,
+                                this.cmbColTopLevel, 
+                                this.cmbColCADLayers,
+                                this.cmbTopFamilyType,
+                                this.cmbColFamilyType,
+                                this.cmbColType};
 
             this.txtBox = new List<System.Windows.Forms.TextBox>() { this.txtShift};
 
@@ -113,36 +113,6 @@ namespace _6_ReadDWG
         }
 
 
-
-        private void SaveLastIndexes()
-        {
-            StreamWriter sw = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedSelectedIndex_Light.txt"));
-            foreach (System.Windows.Forms.ComboBox ss in this.comboBoxes)
-            {
-                sw.WriteLine(ss.SelectedIndex.ToString());
-                sw.Flush();
-            }
-            sw.Close();
-
-
-            StreamWriter sw2 = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedchecked_Light.txt"));
-            foreach (System.Windows.Forms.CheckBox ss in this.checkBoxes)
-            {
-                sw2.WriteLine(ss.Checked.ToString());
-                sw2.Flush();
-            }
-            sw2.Close();
-
-
-            StreamWriter sw3 = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedShiftText_Light.txt"));
-            foreach (System.Windows.Forms.TextBox ss in this.txtBox)
-            {
-                sw3.WriteLine(ss.Text);
-                sw3.Flush();
-            }
-            sw3.Close();
-
-        }
 
         private void GetLastIndexes()
         {
@@ -249,8 +219,42 @@ namespace _6_ReadDWG
         }
 
 
+
+        private void SaveLastIndexes()
+        {
+            StreamWriter sw = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedSelectedIndex_Light.txt"));
+            foreach (System.Windows.Forms.ComboBox ss in this.comboBoxes)
+            {
+                sw.WriteLine(ss.SelectedIndex.ToString());
+                sw.Flush();
+            }
+            sw.Close();
+
+
+            StreamWriter sw2 = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedchecked_Light.txt"));
+            foreach (System.Windows.Forms.CheckBox ss in this.checkBoxes)
+            {
+                sw2.WriteLine(ss.Checked.ToString());
+                sw2.Flush();
+            }
+            sw2.Close();
+
+
+            StreamWriter sw3 = new StreamWriter(Path.Combine(LastIndexesSavePath, "RevitCreatedShiftText_Light.txt"));
+            foreach (System.Windows.Forms.TextBox ss in this.txtBox)
+            {
+                sw3.WriteLine(ss.Text);
+                sw3.Flush();
+            }
+            sw3.Close();
+
+        }
+
+
         private void cmbTopFamilyType_SelectedIndexChanged(object sender, EventArgs e)
         {
+
+
 
             this.cmbColFamilyType.Items.Clear();
             this.subcolFamilyTypes = colFamilyTypes[this.cmbTopFamilyType.SelectedItem.ToString()];
@@ -264,6 +268,9 @@ namespace _6_ReadDWG
                 }
             }
             this.cmbColFamilyType.SelectedIndex = 0;
+
+             
+
         }
 
         private void cmbColFamilyType_SelectedIndexChanged(object sender, EventArgs e)

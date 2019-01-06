@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制。
 // 變更這些屬性的值即可修改組件的相關
 // 資訊。
-[assembly: AssemblyTitle("RevitHelloWorld")]
+[assembly: AssemblyTitle("InstallRevitAPI")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("RevitHelloWorld")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2018")]
+[assembly: AssemblyProduct("InstallRevitAPI")]
+[assembly: AssemblyCopyright("Copyright © Microsoft 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // 下列 GUID 為專案公開 (Expose) 至 COM 時所要使用的 typelib ID
-[assembly: Guid("8dc6f0ff-137a-4b8f-8280-c2a426246bed")]
+[assembly: Guid("803a2ca9-5501-49d6-9cf9-556862b19003")]
 
 // 組件的版本資訊由下列四個值所組成: 
 //
@@ -30,7 +30,7 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 // 您可以指定所有的值，或將組建編號或修訂編號設為預設值
-//方法是使用 '*'，如下所示:
+// 指定為預設值: 
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]

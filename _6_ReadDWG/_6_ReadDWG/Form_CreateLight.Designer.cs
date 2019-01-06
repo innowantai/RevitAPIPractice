@@ -198,7 +198,7 @@
             this.cmbTopFamilyType.FormattingEnabled = true;
             this.cmbTopFamilyType.Location = new System.Drawing.Point(200, 96);
             this.cmbTopFamilyType.Name = "cmbTopFamilyType";
-            this.cmbTopFamilyType.Size = new System.Drawing.Size(291, 24);
+            this.cmbTopFamilyType.Size = new System.Drawing.Size(68, 24);
             this.cmbTopFamilyType.TabIndex = 26;
             this.cmbTopFamilyType.SelectedIndexChanged += new System.EventHandler(this.cmbTopFamilyType_SelectedIndexChanged);
             // 
