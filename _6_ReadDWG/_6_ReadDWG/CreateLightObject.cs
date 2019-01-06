@@ -58,7 +58,7 @@ namespace _6_ReadDWG
                 StartFamilyType(Form.returnType[0], revitDoc);
 
                 /// 開始建立物件
-                CreateLight(Form.returnType[0], Form.returnBaseLevel[0], revitDoc, centerPoint);
+                CreateLight(Form.returnType[0], Form.returnBaseLevel[0], revitDoc, centerPoint, SHIFT);
 
             }
         }
@@ -84,7 +84,7 @@ namespace _6_ReadDWG
         /// <param name="baseLevel"></param>
         /// <param name="topLevel"></param>
         /// <param name="points"></param>
-        public void CreateLight(FamilySymbol Type, Level baseLevel, Document revitDoc, List<XYZ> POINTs)
+        public void CreateLight(FamilySymbol Type, Level baseLevel, Document revitDoc, List<XYZ> POINTs,double SHIFT)
         {
 
             using (Transaction trans = new Transaction(revitDoc))
@@ -93,7 +93,8 @@ namespace _6_ReadDWG
                 foreach (XYZ points in POINTs)
                 {
                     FamilyInstance familyInstance = null;
-                    familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, baseLevel, StructuralType.NonStructural);
+                    XYZ newPoint = new XYZ(points.X, points.Y, points.Z + SHIFT);
+                    familyInstance = revitDoc.Create.NewFamilyInstance(newPoint, Type, baseLevel, StructuralType.NonStructural);
                 }
                 //familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, StructuralType.NonStructural);
                 trans.Commit();
