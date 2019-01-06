@@ -22,9 +22,8 @@ namespace InstallRevitAPI
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string tmpPath = @"C:\Users\Wantai\AppData\Roaming\Autodesk\Revit";
-            string tmpPath2 = @"C:\Users\Wantai\AppData\Roaming\Autodesk\Revit\Addins";
-
+            string tmpPath = Path.Combine(API_DLL_PATH, "Autodesk", "Revit"); 
+            string tmpPath2 = Path.Combine(API_DLL_PATH, "Autodesk", "Revit", "Addins"); 
             if (!Directory.Exists(tmpPath)) Directory.CreateDirectory(tmpPath);
             if (!Directory.Exists(tmpPath2)) Directory.CreateDirectory(tmpPath2); 
             this.txtVersion.Text = "2018"; 
@@ -34,7 +33,7 @@ namespace InstallRevitAPI
         private void btnStart_Click(object sender, EventArgs e)
         {
 
-            REVIT_FOLDER_PATH = @"C:\Users\Wantai\AppData\Roaming\Autodesk\Revit\Addins\" + this.txtVersion.Text.Trim();
+            REVIT_FOLDER_PATH = Path.Combine(API_DLL_PATH, "Autodesk", "Revit", "Addins", this.txtVersion.Text.Trim());
             if (!Directory.Exists(REVIT_FOLDER_PATH)) Directory.CreateDirectory(REVIT_FOLDER_PATH);
 
             string FILE_NAME_1 = "Autodesk.AddInManager";
