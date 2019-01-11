@@ -61,32 +61,78 @@ namespace _6_ReadDWG
                 ele = eleID;
                 break;
             }
+            //Element e = revitDoc.GetElement(ele);
 
+            ////// Processing Part
+            //Parameter PP = e.get_Parameter(BuiltInParameter.DOOR_NUMBER);
+
+            //using (Transaction trans = new Transaction(revitDoc, "Set Parameter"))
+            //{
+            //    trans.Start("Create Floors");
+            //    Parameter PP_ = e.get_Parameter(BuiltInParameter.DOOR_NUMBER);
+            //    PP_.Set("1234");
+            //    trans.Commit();
+            //}
+            /////
+
+
+            //FamilySymbol type_ = revitDoc.GetElement(e.GetTypeId()) as FamilySymbol;
+            //ElementType type = revitDoc.GetElement(e.GetTypeId()) as ElementType;
+            //Family fm = type_.Family;
+
+            //var parameters = e.Parameters;
+            //List<string> ParamLst = new List<string>();
+            //List<string> StrlinLst = new List<string>();
+            //List<BuiltInParameter> BPs = new List<BuiltInParameter>();
+            //foreach (Parameter item in parameters)
+            //{
+            //    ParamLst.Add(item.Definition.Name);
+            //    StrlinLst.Add(item.Definition.Name + " : "  + item.AsString() );
+            //    InternalDefinition Int = item.Definition as InternalDefinition;
+            //    BuiltInParameter BP = Int.BuiltInParameter;
+            //    BPs.Add(BP);
+            //    Parameter hh = type_.get_Parameter(BP);
+            //}
+
+            //BuiltInParameter height = BuiltInParameter.ALL_MODEL_TYPE_MARK;
+
+            //Parameter h = type.get_Parameter(height);  
+            //return Result.Succeeded;
 
 
             CreateLightObject Createion = new CreateLightObject();
             Createion.Main_Create(revitDoc, uidoc);
-
 
             //MainForm mainform = new MainForm();
             //mainform.ShowDialog();
 
             //if (mainform.CASEName == 0)
             //{
-            //    //CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-            //    //Creation.Main_Create(revitDoc, uidoc); 
+            //    CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+            //    Creation.Create_Version_2(revitDoc, uidoc);
             //}
-            //else
+            //else if (mainform.CASEName == 1)
             //{
             //    Floor_Created_Main();
 
             //}
+            //else if (mainform.CASEName == 2)
+            //{
+
+            //    CreateLightObject Createion = new CreateLightObject();
+            //    Createion.Main_Create(revitDoc, uidoc); 
+            //}
+            //else
+            //{ 
+            //    InsertComment ISC = new InsertComment();
+            //    ISC.Main_Create(revitDoc, uidoc);
+                
+            //}
 
 
 
 
-            
-
+            //GetCADTest(revitDoc);
 
 
 
@@ -94,7 +140,88 @@ namespace _6_ReadDWG
             return Result.Succeeded;
         }
 
+       
 
+
+
+
+
+        /// <summary>
+        /// Try To Get The Text From CAD But Failure
+        /// </summary>
+        /// <param name="revitDoc"></param>
+        private void GetCADTest(Document revitDoc)
+        {
+
+            Document doc = uidoc.Document;
+
+
+
+
+
+            View active_view = doc.ActiveView;
+            List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
+
+            // Pick Import Instance 
+            Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
+            ImportInstance dwg = doc.GetElement(r) as ImportInstance;
+            FilteredElementCollector col  = new FilteredElementCollector(doc) .OfClass(typeof(ImportInstance));
+             
+
+            foreach (GeometryObject geometryObj in dwg.get_Geometry(new Options()))
+            { 
+
+                if (geometryObj is GeometryInstance) // This will be the whole thing
+                {
+
+                    GeometryInstance dwgInstance = geometryObj as GeometryInstance; 
+                    var test = dwgInstance.Symbol;
+                    foreach (GeometryObject blockObject in dwgInstance.SymbolGeometry)
+                    {
+                         
+                        if (blockObject is GeometryInstance) // This could be a block
+                        {
+                            //get the object name and coordinates and rotation and 
+                            //load into my own class 
+                            GeometryInstance blockInstance = blockObject as GeometryInstance;
+
+                            string name = blockInstance.Symbol.Name;
+
+                            Transform transform = blockInstance.Transform;
+
+                            XYZ origin = transform.Origin;
+
+                            XYZ vectorTran = transform.OfVector(transform.BasisX.Normalize());
+                            double rot = transform.BasisX.AngleOnPlaneTo(vectorTran, transform.BasisZ.Normalize()); // radians
+                            rot = rot * (180 / Math.PI); // degrees
+                             
+                             
+                        }
+                    }
+                }
+            }
+
+
+        }
+        
+
+
+        private void GetParameters(ParameterSet parameters)
+        {
+
+            List<string> ParamLst = new List<string>();
+            List<string> StrlinLst = new List<string>();
+            List<BuiltInParameter> BPs = new List<BuiltInParameter>();
+            foreach (Parameter item in parameters)
+            {
+                ParamLst.Add(item.Definition.Name);
+                StrlinLst.Add(item.Definition.Name + " : " + item.AsString());
+                InternalDefinition Int = item.Definition as InternalDefinition;
+                BuiltInParameter BP = Int.BuiltInParameter;
+                BPs.Add(BP);
+            }
+
+        }
 
 
         private void Floor_Created_Main()

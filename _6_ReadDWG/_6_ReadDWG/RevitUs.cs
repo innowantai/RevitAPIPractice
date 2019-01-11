@@ -184,7 +184,7 @@ namespace _6_ReadDWG
         public Dictionary<string, List<FamilySymbol>> GetDocColumnsTypes(Document doc)
         {
 
-            return this.GetFamilyTypes(doc, BuiltInCategory.OST_Columns);
+            return this.GetFamilyTypes(doc, BuiltInCategory.OST_StructuralColumns);
         }
 
 

@@ -37,5 +37,21 @@ namespace _6_ReadDWG
             this.Close();
 
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = System.Windows.Forms.DialogResult.OK;
+            CASEName = 2;
+            this.Close();
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
+            this.DialogResult = System.Windows.Forms.DialogResult.OK;
+            CASEName = 3;
+            this.Close();
+        }
     }
 }

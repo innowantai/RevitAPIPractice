@@ -51,6 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BEAM.cs" />
+    <Compile Include="CADGeoObject.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="CreateBeamsAndColumns.cs" />
     <Compile Include="CreateFloors.cs" />
@@ -76,6 +78,19 @@
     <Compile Include="Form_CreateLight.Designer.cs">
       <DependentUpon>Form_CreateLight.cs</DependentUpon>
     </Compile>
+    <Compile Include="Form_InsertCommentToBeam.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_InsertCommentToBeam.Designer.cs">
+      <DependentUpon>Form_InsertCommentToBeam.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_InsertShowLayers.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_InsertShowLayers.Designer.cs">
+      <DependentUpon>Form_InsertShowLayers.cs</DependentUpon>
+    </Compile>
+    <Compile Include="InsertComment.cs" />
     <Compile Include="LINE.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -96,6 +111,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form_CreateLight.resx">
       <DependentUpon>Form_CreateLight.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_InsertCommentToBeam.resx">
+      <DependentUpon>Form_InsertCommentToBeam.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_InsertShowLayers.resx">
+      <DependentUpon>Form_InsertShowLayers.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

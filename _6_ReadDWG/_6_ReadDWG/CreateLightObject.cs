@@ -25,11 +25,19 @@ namespace _6_ReadDWG
             CreateObjects RevCreate = new CreateObjects(revitDoc);
 
 
-            Dictionary<string, List<LINE>> CADGeometry = null;
+            Dictionary<string, List<LINE>> BeforeSortedCADGeometry = null;
             /// 讀取CAD所有圖層幾何資訊
-            CADGeometry = GeneralCAD(uidoc);
+            BeforeSortedCADGeometry = GeneralCAD(uidoc);
             /// 若沒選擇CAD 則回傳
-            if (CADGeometry == null) return;
+            if (BeforeSortedCADGeometry == null) return;
+
+            Dictionary<string, List<LINE>> CADGeometry = new Dictionary<string, List<LINE>>();
+            var Layers = BeforeSortedCADGeometry.OrderBy(t => t.Key).ToList();
+
+            foreach (var item in Layers)
+            {
+                CADGeometry[item.Key] = BeforeSortedCADGeometry[item.Key];
+            }
 
 
             /// 取得Revit指定的FamilyTypes
@@ -41,7 +49,7 @@ namespace _6_ReadDWG
             Form.ShowDialog();
 
             /// 確認是要用圓形或者是多邊形心中來建立物件
-            string RadioCase = Form.radCircle.Checked == true ? "Circle" : "Ployline";
+            string RadioCase = Form.radCircle.Checked == true ? "Circle" : (Form.radPloyline.Checked == true ? "Ployline" : "Square");
 
             if (Form.DialogResult == System.Windows.Forms.DialogResult.OK)
             {
@@ -61,8 +69,16 @@ namespace _6_ReadDWG
                 CreateLight(Form.returnType[0], Form.returnBaseLevel[0], revitDoc, centerPoint, SHIFT);
 
             }
+
+            Form.Dispose();
+
         }
 
+        /// <summary>
+        /// 啟動FamilyType
+        /// </summary>
+        /// <param name="Type"></param>
+        /// <param name="revitDoc"></param>
         public void StartFamilyType(FamilySymbol Type, Document revitDoc)
         {
             if (!Type.IsActive)
@@ -84,9 +100,9 @@ namespace _6_ReadDWG
         /// <param name="baseLevel"></param>
         /// <param name="topLevel"></param>
         /// <param name="points"></param>
-        public void CreateLight(FamilySymbol Type, Level baseLevel, Document revitDoc, List<XYZ> POINTs,double SHIFT)
+        public void CreateLight(FamilySymbol Type, Level baseLevel, Document revitDoc, List<XYZ> POINTs, double SHIFT)
         {
-
+            int kk = 0;
             using (Transaction trans = new Transaction(revitDoc))
             {
                 trans.Start("Create Family Instance");
@@ -95,10 +111,13 @@ namespace _6_ReadDWG
                     FamilyInstance familyInstance = null;
                     XYZ newPoint = new XYZ(points.X, points.Y, points.Z + SHIFT);
                     familyInstance = revitDoc.Create.NewFamilyInstance(newPoint, Type, baseLevel, StructuralType.NonStructural);
+                    kk++;
                 }
                 //familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, StructuralType.NonStructural);
                 trans.Commit();
             }
+
+            System.Windows.Forms.MessageBox.Show("執行完成，總共建立" + kk.ToString() + "個物件 ");
         }
 
 
@@ -111,12 +130,12 @@ namespace _6_ReadDWG
         private Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> CatchLightFamilyType(Dictionary<string, List<FamilySymbol>> Types)
         {
             Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> AllFamilyTypes = new Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>>();
-            
+
             foreach (KeyValuePair<string, List<FamilySymbol>> item in Types)
             {
                 Dictionary<string, List<FamilySymbol>> LightType = new Dictionary<string, List<FamilySymbol>>();
                 LightType[item.Key] = item.Value;
-                 
+
                 string KEY = item.Value[0].Category.Name.ToString();
 
                 if (AllFamilyTypes.Keys.Contains(KEY))
@@ -135,8 +154,8 @@ namespace _6_ReadDWG
                 //    //string test = item.Value[0].Category.Name.ToString(); 
                 //}
             }
-             
-           return AllFamilyTypes;
+
+            return AllFamilyTypes;
         }
 
 
@@ -159,7 +178,7 @@ namespace _6_ReadDWG
                 {
                     newResult.Add(line);
                 }
-                else if (RadioCase != "Circle")
+                else if (RadioCase != "Circle" && line.Name != "Circle")
                 {
                     processLines.Add(line);
                 }
@@ -194,10 +213,26 @@ namespace _6_ReadDWG
                     j++;
                 }
 
+                bool IsSquare = false;
+                if (RadioCase == "Square" && polyline.Count == 4 &&
+                    Math.Round(polyline[0].GetLength(true), 3) == Math.Round(polyline[1].GetLength(true), 3) &&
+                    Math.Round(polyline[1].GetLength(true), 3) == Math.Round(polyline[2].GetLength(true), 3) &&
+                    Math.Round(polyline[2].GetLength(true), 3) == Math.Round(polyline[3].GetLength(true), 3))
+                {
+                    IsSquare = true;
+                }
+
+                if (RadioCase == "Square" && !IsSquare) continue;
+
+
                 if (polyline.Count != 1)
                 {
-                    double newX = polyline.Sum(tt => tt.GetStartPoint().X) / polyline.Count;
-                    double newY = polyline.Sum(tt => tt.GetStartPoint().Y) / polyline.Count;
+                    double newX1 = polyline.Sum(tt => tt.GetStartPoint().X) / polyline.Count;
+                    double newY1 = polyline.Sum(tt => tt.GetStartPoint().Y) / polyline.Count;
+                    double newX2 = polyline.Sum(tt => tt.GetEndPoint().X) / polyline.Count;
+                    double newY2 = polyline.Sum(tt => tt.GetEndPoint().Y) / polyline.Count;
+                    double newX = (newX1 + newX2) / 2;
+                    double newY = (newY1 + newY2) / 2;
                     XYZ newPoint = new XYZ(newX, newY, 0);
                     LINE newLine = new LINE(newPoint, newPoint, 10);
                     newResult.Add(newLine);
@@ -293,21 +328,23 @@ namespace _6_ReadDWG
             List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
 
             try
-            {  
+            {
                 // Pick Import Instance 
                 Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
                 var import = doc.GetElement(r) as ImportInstance;
 
                 // Get Geometry 
                 var ge = import.get_Geometry(new Options());
-                foreach (var go in ge)
+                foreach (GeometryObject go in ge)
                 {
                     if (go is GeometryInstance)
                     {
+
                         var gi = go as GeometryInstance;
                         var ge2 = gi.GetInstanceGeometry();
                         if (ge2 != null)
                         {
+
                             foreach (var obj in ge2)
                             {
                                 // Only work on PolyLines 
@@ -324,6 +361,26 @@ namespace _6_ReadDWG
                                     if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
                                     {
                                         visible_dwg_geo.Add(obj);
+                                    }
+                                }
+                                else if (obj is Solid)
+                                {
+                                    Solid soild = obj as Solid;
+                                    List<List<Line>> EDGEs = new List<List<Line>>();
+                                    foreach (PlanarFace planarFace in soild.Faces)
+                                    {
+                                        EdgeArrayArray Eaa = planarFace.EdgeLoops;
+
+                                        foreach (EdgeArray edgearray in Eaa)
+                                        {
+                                            List<Line> edges = new List<Line>();
+                                            foreach (Edge edge in edgearray)
+                                            {
+                                                Line curve = edge.AsCurve() as Line;
+                                                edges.Add(curve);
+                                            }
+                                            EDGEs.Add(edges);
+                                        }
                                     }
                                 }
                             }

@@ -284,6 +284,21 @@ namespace _6_ReadDWG
                 + (this.GetStartPoint().Z - this.GetEndPoint().Z) * (this.GetStartPoint().Z - this.GetEndPoint().Z)
                 );
         }
+        public double GetLength(bool IsPlaneOnly)
+        {
+            if (IsPlaneOnly)
+            { 
+                return Math.Sqrt(
+                    (this.GetStartPoint().X - this.GetEndPoint().X) * (this.GetStartPoint().X - this.GetEndPoint().X) +
+                    (this.GetStartPoint().Y - this.GetEndPoint().Y) * (this.GetStartPoint().Y - this.GetEndPoint().Y) 
+                    );
+            }
+            return Math.Sqrt(
+                (this.GetStartPoint().X - this.GetEndPoint().X) * (this.GetStartPoint().X - this.GetEndPoint().X) +
+                (this.GetStartPoint().Y - this.GetEndPoint().Y) * (this.GetStartPoint().Y - this.GetEndPoint().Y)
+                + (this.GetStartPoint().Z - this.GetEndPoint().Z) * (this.GetStartPoint().Z - this.GetEndPoint().Z)
+                );
+        }
         private double GetLength(XYZ point1, XYZ point2)
         {
             return Math.Sqrt(
