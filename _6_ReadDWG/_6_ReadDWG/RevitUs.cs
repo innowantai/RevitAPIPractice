@@ -148,6 +148,23 @@ namespace _6_ReadDWG
     public class FindRevitElements
     {
 
+
+        /// <summary>
+        /// Get Beam Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public List<Element> GetDocFloorTypes(Document doc)
+        {
+            /// 取得所有板的種類
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            collector.OfCategory(BuiltInCategory.OST_Floors);
+            List<Element> floorTypes = collector.ToList().OrderBy(t => t.Name).ToList();
+            return floorTypes;
+        }
+
+
+
         /// <summary>
         /// Get Beam Types
         /// </summary>
@@ -204,7 +221,9 @@ namespace _6_ReadDWG
                 Level ll = (Level)viewElement;
                 ResLevel.Add(ll);
             }
-            return ResLevel;
+
+
+            return ResLevel.OrderBy(t => t.Name).ToList();
         }
 
         /// <summary>

@@ -61,7 +61,7 @@
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("新細明體", 14F);
-            this.button1.Location = new System.Drawing.Point(175, 261);
+            this.button1.Location = new System.Drawing.Point(221, 268);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(103, 41);
             this.button1.TabIndex = 14;

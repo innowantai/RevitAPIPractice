@@ -55,6 +55,7 @@
     <Compile Include="CADGeoObject.cs" />
     <Compile Include="Class1.cs" />
     <Compile Include="CreateBeamsAndColumns.cs" />
+    <Compile Include="CreateFloorByCADHashRegion.cs" />
     <Compile Include="CreateFloors.cs" />
     <Compile Include="CreateFloor_Version2.cs" />
     <Compile Include="CreateLightObject.cs" />
@@ -71,6 +72,13 @@
     </Compile>
     <Compile Include="Form2_Floor.Designer.cs">
       <DependentUpon>Form2_Floor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="FormDataProcessing.cs" />
+    <Compile Include="Form_CreateFloorByCADHash.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_CreateFloorByCADHash.Designer.cs">
+      <DependentUpon>Form_CreateFloorByCADHash.cs</DependentUpon>
     </Compile>
     <Compile Include="Form_CreateLight.cs">
       <SubType>Form</SubType>
@@ -90,6 +98,7 @@
     <Compile Include="Form_InsertShowLayers.Designer.cs">
       <DependentUpon>Form_InsertShowLayers.cs</DependentUpon>
     </Compile>
+    <Compile Include="GetCADImformation.cs" />
     <Compile Include="InsertComment.cs" />
     <Compile Include="LINE.cs" />
     <Compile Include="MainForm.cs">
@@ -108,6 +117,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form2_Floor.resx">
       <DependentUpon>Form2_Floor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_CreateFloorByCADHash.resx">
+      <DependentUpon>Form_CreateFloorByCADHash.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_CreateLight.resx">
       <DependentUpon>Form_CreateLight.cs</DependentUpon>

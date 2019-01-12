@@ -22,23 +22,14 @@ namespace _6_ReadDWG
         public FindRevitElements RevFind = new FindRevitElements();
         public void Main_Create(Document revitDoc, UIDocument uidoc)
         {
-            CreateObjects RevCreate = new CreateObjects(revitDoc);
 
+            /// 建立CAD處理物件
+            GetCADImformation GetCADImformation = new GetCADImformation(true, true, true);
+            GetCADImformation.CADProcessing(uidoc);
 
-            Dictionary<string, List<LINE>> BeforeSortedCADGeometry = null;
-            /// 讀取CAD所有圖層幾何資訊
-            BeforeSortedCADGeometry = GeneralCAD(uidoc);
-            /// 若沒選擇CAD 則回傳
-            if (BeforeSortedCADGeometry == null) return;
-
-            Dictionary<string, List<LINE>> CADGeometry = new Dictionary<string, List<LINE>>();
-            var Layers = BeforeSortedCADGeometry.OrderBy(t => t.Key).ToList();
-
-            foreach (var item in Layers)
-            {
-                CADGeometry[item.Key] = BeforeSortedCADGeometry[item.Key];
-            }
-
+            Dictionary<string, List<LINE>> CADGeometry = GetCADImformation.LayersAndGeometries;
+            if (CADGeometry == null) return;
+                     
 
             /// 取得Revit指定的FamilyTypes
             Dictionary<string, List<Dictionary<string, List<FamilySymbol>>>> LightFamilyTypes = CatchLightFamilyType(RevFind.GetDocLightTypes(revitDoc));
@@ -361,26 +352,6 @@ namespace _6_ReadDWG
                                     if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
                                     {
                                         visible_dwg_geo.Add(obj);
-                                    }
-                                }
-                                else if (obj is Solid)
-                                {
-                                    Solid soild = obj as Solid;
-                                    List<List<Line>> EDGEs = new List<List<Line>>();
-                                    foreach (PlanarFace planarFace in soild.Faces)
-                                    {
-                                        EdgeArrayArray Eaa = planarFace.EdgeLoops;
-
-                                        foreach (EdgeArray edgearray in Eaa)
-                                        {
-                                            List<Line> edges = new List<Line>();
-                                            foreach (Edge edge in edgearray)
-                                            {
-                                                Line curve = edge.AsCurve() as Line;
-                                                edges.Add(curve);
-                                            }
-                                            EDGEs.Add(edges);
-                                        }
                                     }
                                 }
                             }

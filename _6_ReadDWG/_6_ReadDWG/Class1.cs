@@ -100,8 +100,8 @@ namespace _6_ReadDWG
             //return Result.Succeeded;
 
 
-            CreateLightObject Createion = new CreateLightObject();
-            Createion.Main_Create(revitDoc, uidoc);
+            CreateFloorByCADHashRegion test = new CreateFloorByCADHashRegion();
+            test.Main_Create(revitDoc, uidoc);
 
             //MainForm mainform = new MainForm();
             //mainform.ShowDialog();
@@ -126,7 +126,7 @@ namespace _6_ReadDWG
             //{ 
             //    InsertComment ISC = new InsertComment();
             //    ISC.Main_Create(revitDoc, uidoc);
-                
+
             //}
 
 
