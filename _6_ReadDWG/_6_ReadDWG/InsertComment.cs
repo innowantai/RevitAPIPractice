@@ -17,17 +17,24 @@ namespace _6_ReadDWG
     class InsertComment
     {
 
+        private const int IG_POINT = 4;
         private string ModifyLayerName = "PARAMETER_FOR_MODIFT_SHIFT";
         public FindRevitElements RevFind = new FindRevitElements();
-        private const int IG_POINT = 4;
         public void Main_Create(Document revitDoc, UIDocument uidoc)
         {
+
+            /// 建立CAD處理物件
+            GetCADImformation GetCADImformation = new GetCADImformation(true, true, true);
+            GetCADImformation.CADProcessing(uidoc);
+
             /// 讀取Revit匯入之CAD圖層 
-            Dictionary<string, List<LINE>> CADGeometry = null;
-            CADGeometry = GeneralCAD(uidoc);
+            Dictionary<string, List<LINE>> CADGeometry = GetCADImformation.LayersAndGeometries;
+
             if (CADGeometry == null) return;
 
-            LINE SHIFT = CADGeometry[ModifyLayerName][0];
+            //LINE SHIFT = CADGeometry[ModifyLayerName][0];
+            XYZ SHIFT = GetCADImformation.Origin;
+
 
             /// 擷取Revit所有樓層資訊
             List<Level> levels = RevFind.GetLevels(revitDoc);
@@ -48,11 +55,9 @@ namespace _6_ReadDWG
                 FIC_Layer.ShowDialog();
                 if (FIC_Layer.DialogResult == System.Windows.Forms.DialogResult.OK)
                 {
-                    List<CADGeoObject> TEXT_DATA = FIC_Layer.Selected_DATA;
-                    /// 計算Revit-CAD圖層所有幾何資訊之最小值
-                    /// XYZ Revit_CAD_Layer_minPoint = GetRevitImportCADGeometryMiniumn(CADGeometry);
+                    List<CADGeoObject> TEXT_DATA = FIC_Layer.Selected_DATA; 
                     /// Revit-CAD 與 CAD 座標偏移計算 
-                    List<CADGeoObject> RESULT = ShiftProcessing(DATA_CAD_GEOM, SHIFT.GetStartPoint(), TEXT_DATA);
+                    List<CADGeoObject> RESULT = ShiftProcessing(DATA_CAD_GEOM, SHIFT, TEXT_DATA);
 
                     /// 取得所選取之樓層
                     Level targetLevel = FIC.levels[FIC.cmbLevels.SelectedIndex];
@@ -117,7 +122,7 @@ namespace _6_ReadDWG
 
 
         /// <summary>
-        /// CAD TEXT 座標偏移量處理
+        /// CAD TEXT 座標偏移量處理 , Will Add Rotation Property
         /// </summary>
         /// <param name="DATA_CAD_GEOM"></param>
         /// <param name="RevitCADMin"></param>
@@ -125,11 +130,7 @@ namespace _6_ReadDWG
         /// <returns></returns>
         private List<CADGeoObject> ShiftProcessing(List<CADGeoObject> DATA_CAD_GEOM, XYZ RevitCADMin, List<CADGeoObject> TEXT_DATA)
         {
-            //double min_x = DATA_CAD_GEOM.Min(t => t.Point.X);
-            //double min_y = DATA_CAD_GEOM.Min(t => t.Point.Y);
 
-            //double DX = min_x - RevitCADMin.X;
-            //double DY = min_y - RevitCADMin.Y; 
 
             double DX = -RevitCADMin.X;
             double DY = -RevitCADMin.Y;
@@ -145,34 +146,7 @@ namespace _6_ReadDWG
             return RESULT.OrderBy(t => t.Point.X).ToList();
 
         }
-
-
-        /// <summary>
-        /// 取的CAD所有幾何線段之最小值
-        /// </summary>
-        /// <param name="CADGeometry"></param>
-        /// <returns></returns>
-        private XYZ GetRevitImportCADGeometryMiniumn(Dictionary<string, List<LINE>> CADGeometry)
-        {
-            List<LINE> LINE_all = new List<LINE>();
-            foreach (KeyValuePair<string, List<LINE>> item in CADGeometry)
-            {
-                foreach (LINE line in item.Value)
-                {
-                    LINE_all.Add(line);
-                }
-            }
-
-            double minX_s = LINE_all.Min(t => t.GetStartPoint().X);
-            double minY_s = LINE_all.Min(t => t.GetStartPoint().Y);
-            double minX_e = LINE_all.Min(t => t.GetEndPoint().X);
-            double minY_e = LINE_all.Min(t => t.GetEndPoint().Y);
-            double minX = (minX_s + minX_e) / 2;
-            double minY = (minY_s + minY_e) / 2;
-            return new XYZ(minX, minY, 0);
-
-        }
-
+                 
 
         /// <summary>
         /// 篩選指定樓層的梁
@@ -215,7 +189,6 @@ namespace _6_ReadDWG
             return newBeam;
         }
 
-
         /// <summary>
         /// 取得所有的梁(水平與垂直向)
         /// </summary>
@@ -230,8 +203,7 @@ namespace _6_ReadDWG
             foreach (Element beam in beams)
             {
                 try
-                {
-
+                { 
                     ///// 取得梁的Level
                     Parameter mLevel = beam.get_Parameter(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM);
                     string levelName = mLevel.AsValueString();
@@ -240,9 +212,7 @@ namespace _6_ReadDWG
                     ElementType type = revitDoc.GetElement(beam.GetTypeId()) as ElementType;
                     Parameter b = type.LookupParameter("b");
 
-                    double width = b == null ? 0 : b.AsDouble();
-
-
+                    double width = b == null ? 0 : b.AsDouble(); 
 
                     ///檢查梁中心線是否有偏移 
                     BuiltInParameter paraIndex = BuiltInParameter.START_Y_JUSTIFICATION;
@@ -301,9 +271,7 @@ namespace _6_ReadDWG
                 }
 
             }
-            return Beams;
-
-
+            return Beams; 
 
         }
 
@@ -338,226 +306,7 @@ namespace _6_ReadDWG
             sr.Close();
         }
 
-
-        /// <summary>
-        /// Pick a DWG import instance, extract polylines 
-        /// from it visible in the current view and create
-        /// filled regions from them.
-        /// </summary>
-        public Dictionary<string, List<LINE>> GeneralCAD(UIDocument uidoc)
-        {
-            Document doc = uidoc.Document;
-            View active_view = doc.ActiveView;
-            List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
-
-            try
-            {
-                // Pick Import Instance 
-                Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
-                ImportInstance import = doc.GetElement(r) as ImportInstance;
-
-                // Get Geometry 
-                var ge = import.get_Geometry(new Options());
-                foreach (var go in ge)
-                {
-                    if (go is GeometryInstance)
-                    {
-                        var gi = go as GeometryInstance;
-                        var ge2 = gi.GetInstanceGeometry();
-                        if (ge2 != null)
-                        {
-                            foreach (var obj in ge2)
-                            {
-                                // Only work on PolyLines 
-                                if (obj is PolyLine | obj is Arc | obj is Line)
-                                {
-
-                                    // Use the GraphicsStyle to get the 
-                                    // DWG layer linked to the Category 
-                                    // for visibility.
-
-                                    var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                                    // Check if the layer is visible in the view.
-
-                                    if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
-                                    {
-                                        visible_dwg_geo.Add(obj);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                // Do something with the info 
-                Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
-                if (visible_dwg_geo.Count > 0)
-                {
-                    // Retrieve first filled region type 
-                    var filledType = new FilteredElementCollector(doc)
-                      .WhereElementIsElementType()
-                      .OfClass(typeof(FilledRegionType))
-                      .OfType<FilledRegionType>()
-                      .First();
-
-                    using (var t = new Transaction(doc))
-                    {
-                        t.Start("ProcessDWG");
-                        List<LINE> tmp = new List<LINE>();
-                        foreach (var obj in visible_dwg_geo)
-                        {
-                            var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                            string layerName = gStyle.GraphicsStyleCategory.Name;
-
-                            tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
-                            if (obj is PolyLine)
-                            {
-                                // Create loops for detail region 
-                                var poly = obj as PolyLine;
-                                var points = poly.GetCoordinates();
-                                for (int kk = 0; kk < points.Count - 1; kk++)
-                                {
-                                    try
-                                    {
-                                        tmp.Add(new LINE(points[kk], points[kk + 1]));
-                                    }
-                                    catch (Exception)
-                                    {
-                                    }
-                                }
-                            }
-                            else if (obj is Line)
-                            {
-                                var line = obj as Line;
-                                tmp.Add(new LINE(line.GetEndPoint(0),
-                                                     line.GetEndPoint(1)));
-                            }
-                            else if (obj is Arc)
-                            {  
-                                var Arc = obj as Arc;
-                                XYZ newPoint = new XYZ(Arc.Center.X, Arc.Center.Y, 0);
-                                LINE newLine = new LINE(newPoint, newPoint, 10);
-                                newLine.Name = "Circle";
-                                tmp.Add(newLine);
-                                 
-
-                            }
-                            res[layerName] = tmp;
-                        }
-                    }
-                }
-
-
-
-                return res;
-            }
-            catch (Exception)
-            {
-
-                return null;
-            }
-        }
-
-
-        /// <summary>
-        /// Pick a DWG import instance, extract polylines 
-        /// from it visible in the current view and create
-        /// filled regions from them.
-        /// </summary>
-        public Dictionary<string, List<LINE>> ProcessVisible(UIDocument uidoc)
-        {
-            Document doc = uidoc.Document;
-            View active_view = doc.ActiveView;
-            List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
-
-            // Pick Import Instance 
-            Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
-            var import = doc.GetElement(r) as ImportInstance;
-
-            // Get Geometry 
-            var ge = import.get_Geometry(new Options());
-            foreach (var go in ge)
-            {
-                if (go is GeometryInstance)
-                {
-                    var gi = go as GeometryInstance;
-                    var ge2 = gi.GetInstanceGeometry();
-                    if (ge2 != null)
-                    {
-                        foreach (var obj in ge2)
-                        {
-                            // Only work on PolyLines 
-                            if (obj is PolyLine | obj is Arc | obj is Line)
-                            {
-
-                                // Use the GraphicsStyle to get the 
-                                // DWG layer linked to the Category 
-                                // for visibility.
-
-                                var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                                // Check if the layer is visible in the view.
-
-                                if (!active_view.GetCategoryHidden(gStyle.GraphicsStyleCategory.Id))
-                                {
-                                    visible_dwg_geo.Add(obj);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Do something with the info 
-            Dictionary<string, List<LINE>> res = new Dictionary<string, List<LINE>>();
-            if (visible_dwg_geo.Count > 0)
-            {
-                // Retrieve first filled region type 
-                var filledType = new FilteredElementCollector(doc)
-                  .WhereElementIsElementType()
-                  .OfClass(typeof(FilledRegionType))
-                  .OfType<FilledRegionType>()
-                  .First();
-
-                using (var t = new Transaction(doc))
-                {
-                    t.Start("ProcessDWG");
-                    List<LINE> tmp = new List<LINE>();
-                    foreach (var obj in visible_dwg_geo)
-                    {
-                        var gStyle = doc.GetElement(obj.GraphicsStyleId) as GraphicsStyle;
-                        string layerName = gStyle.GraphicsStyleCategory.Name;
-                        LINE pp = null;
-                        if (obj is PolyLine)
-                        {
-                            // Create loops for detail region 
-                            var poly = obj as PolyLine;
-                            var points = poly.GetCoordinates();
-                            pp = new LINE(points[0], points[2]);
-
-                        }
-                        else if (obj is Arc)
-                        {
-                            var Arc = obj as Arc;
-                            pp = new LINE(Arc.Center, Arc.Center);
-                        }
-                        else if (obj is Line)
-                        {
-                            var line = obj as Line;
-                            pp = new LINE(line.GetEndPoint(0), line.GetEndPoint(1));
-                        }
-                        tmp = res.ContainsKey(layerName) ? res[layerName] : new List<LINE>();
-                        tmp.Add(pp);
-                        res[layerName] = tmp;
-                    }
-                }
-            }
-
-            return res;
-        }
-
-
-
+         
         public static int[] FindAllIndexof<T>(IEnumerable<T> values, T val)
         {
             return values.Select((b, i) => Equals(b, val) ? i : -1).Where(i => i != -1).ToArray();

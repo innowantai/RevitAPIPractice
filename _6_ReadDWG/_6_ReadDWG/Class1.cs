@@ -98,35 +98,35 @@ namespace _6_ReadDWG
 
             //Parameter h = type.get_Parameter(height);  
             //return Result.Succeeded;
-             
-            CreateFloorByCADHashRegion test = new CreateFloorByCADHashRegion();
-            test.Main_Create(revitDoc, uidoc);
 
-            //MainForm mainform = new MainForm();
-            //mainform.ShowDialog();
+            //CreateFloorByCADHashRegion test = new CreateFloorByCADHashRegion();
+            //test.Main_Create(revitDoc, uidoc);
 
-            //if (mainform.CASEName == 0)
-            //{
-            //    CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-            //    Creation.Create_Version_2(revitDoc, uidoc);
-            //}
-            //else if (mainform.CASEName == 1)
-            //{
-            //    Floor_Created_Main();
+            MainForm mainform = new MainForm();
+            mainform.ShowDialog();
 
-            //}
-            //else if (mainform.CASEName == 2)
-            //{
+            if (mainform.CASEName == 0)
+            {
+                CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+                Creation.Create_Version_2(revitDoc, uidoc);
+            }
+            else if (mainform.CASEName == 1)
+            {
+                Floor_Created_Main();
 
-            //    CreateLightObject Createion = new CreateLightObject();
-            //    Createion.Main_Create(revitDoc, uidoc); 
-            //}
-            //else
-            //{ 
-            //    InsertComment ISC = new InsertComment();
-            //    ISC.Main_Create(revitDoc, uidoc);
+            }
+            else if (mainform.CASEName == 2)
+            {
 
-            //}
+                CreateLightObject Createion = new CreateLightObject();
+                Createion.Main_Create(revitDoc, uidoc);
+            }
+            else
+            {
+                InsertComment ISC = new InsertComment();
+                ISC.Main_Create(revitDoc, uidoc);
+
+            }
 
 
 

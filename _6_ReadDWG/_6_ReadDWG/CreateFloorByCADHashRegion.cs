@@ -14,8 +14,7 @@ using Autodesk.Revit.UI.Selection;
 namespace _6_ReadDWG
 {
     public class CreateFloorByCADHashRegion
-    {
-        const double _eps = 1.0e-9;
+    { 
         public FindRevitElements RevFind = new FindRevitElements();
         public void Main_Create(Document revitDoc, UIDocument uidoc)
         {

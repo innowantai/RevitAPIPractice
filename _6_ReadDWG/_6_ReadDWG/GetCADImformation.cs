@@ -20,6 +20,9 @@ namespace _6_ReadDWG
         private bool IsArc;
         private bool IsLine;
         private bool IsPloyLine;
+        public XYZ Origin;
+        public double Scale;
+        public List<XYZ> Rotation_Dir;
         public Dictionary<string, List<LINE>> LayersAndGeometries;
         public Dictionary<string, List<List<LINE>>> LayersAndClosedRegions;
 
@@ -93,6 +96,10 @@ namespace _6_ReadDWG
                     { 
                         GeometryInstance gi = go as GeometryInstance;
                         GeometryElement ge2 = gi.GetInstanceGeometry();
+                        this.Origin = gi.Transform.Origin;
+                        this.Rotation_Dir = new List<XYZ>() {gi.Transform.BasisX, gi.Transform.BasisY, gi.Transform.BasisZ };
+                        this.Scale = gi.Transform.Scale;
+
                         if (ge2 != null)
                         {
 
