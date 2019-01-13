@@ -47,6 +47,7 @@ namespace _6_ReadDWG
 
         private void Form_CreateLight_Load(object sender, EventArgs e)
         {
+
             this.radCircle.Checked = true;
             this.checkBoxes = new List<CheckBox>();
 
@@ -251,11 +252,10 @@ namespace _6_ReadDWG
         }
 
 
+
+
         private void cmbTopFamilyType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-
-
+        { 
             this.cmbColFamilyType.Items.Clear();
             this.subcolFamilyTypes = colFamilyTypes[this.cmbTopFamilyType.SelectedItem.ToString()];
 
@@ -267,9 +267,7 @@ namespace _6_ReadDWG
                     this.cmbColFamilyType.Items.Add(item.Key);
                 }
             }
-            this.cmbColFamilyType.SelectedIndex = 0;
-
-             
+            this.cmbColFamilyType.SelectedIndex = 0; 
 
         }
 

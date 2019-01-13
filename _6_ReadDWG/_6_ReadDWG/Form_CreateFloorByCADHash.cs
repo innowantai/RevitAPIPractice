@@ -55,7 +55,7 @@ namespace _6_ReadDWG
             this.Comboxes = new List<System.Windows.Forms.ComboBox>() { this.cmbCADLayers, this.cmbFloorTypes, this.cmbBaseLevels };
             this.Texts = new List<System.Windows.Forms.TextBox>() { this.txtShift };
             this.Radios = new List<RadioButton>() { };
-            this.CheckBoxes = new List<CheckBox>() { this.chIsIndicatedLayers };
+            this.CheckBoxes = new List<CheckBox>() { this.chIsIndicatedLayers ,this.chIsStructural};
 
             FDP = new FormDataProcessing(FileName);
             FDP.SetParameters(this.Comboxes, this.Texts, this.Radios, this.CheckBoxes);
@@ -69,7 +69,6 @@ namespace _6_ReadDWG
             FDP.Saving();
             this.DialogResult = DialogResult.OK;
             this.Close();
-            this.Dispose();
         }
 
 

@@ -98,8 +98,7 @@ namespace _6_ReadDWG
 
             //Parameter h = type.get_Parameter(height);  
             //return Result.Succeeded;
-
-
+             
             CreateFloorByCADHashRegion test = new CreateFloorByCADHashRegion();
             test.Main_Create(revitDoc, uidoc);
 

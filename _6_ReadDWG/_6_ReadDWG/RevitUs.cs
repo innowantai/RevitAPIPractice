@@ -164,6 +164,20 @@ namespace _6_ReadDWG
         }
 
 
+        /// <summary>
+        /// Get Beam Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public List<Element> GetDocCeilingTypes(Document doc)
+        {
+            /// 取得所有板的種類
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            collector.OfCategory(BuiltInCategory.OST_Ceilings);
+            List<Element> floorTypes = collector.ToList().OrderBy(t => t.Name).ToList();
+            return floorTypes;
+        }
+
 
         /// <summary>
         /// Get Beam Types

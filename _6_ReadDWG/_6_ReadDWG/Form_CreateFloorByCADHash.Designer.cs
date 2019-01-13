@@ -38,6 +38,7 @@
             this.txtShift = new System.Windows.Forms.TextBox();
             this.btnStart = new System.Windows.Forms.Button();
             this.chIsIndicatedLayers = new System.Windows.Forms.CheckBox();
+            this.chIsStructural = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label2
@@ -141,11 +142,23 @@
             this.chIsIndicatedLayers.UseVisualStyleBackColor = true;
             this.chIsIndicatedLayers.CheckedChanged += new System.EventHandler(this.chIsIndicatedLayers_CheckedChanged);
             // 
+            // chIsStructural
+            // 
+            this.chIsStructural.AutoSize = true;
+            this.chIsStructural.Font = new System.Drawing.Font("新細明體", 12F);
+            this.chIsStructural.Location = new System.Drawing.Point(485, 127);
+            this.chIsStructural.Name = "chIsStructural";
+            this.chIsStructural.Size = new System.Drawing.Size(75, 20);
+            this.chIsStructural.TabIndex = 29;
+            this.chIsStructural.Text = "結構板";
+            this.chIsStructural.UseVisualStyleBackColor = true;
+            // 
             // Form_CreateFloorByCADHash
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(601, 361);
+            this.Controls.Add(this.chIsStructural);
             this.Controls.Add(this.chIsIndicatedLayers);
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.txtShift);
@@ -172,9 +185,10 @@
         public System.Windows.Forms.ComboBox cmbBaseLevels;
         public System.Windows.Forms.ComboBox cmbCADLayers;
         public System.Windows.Forms.CheckBox chIsIndicatedLayers;
-        private System.Windows.Forms.TextBox txtShift;
+        public System.Windows.Forms.TextBox txtShift;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Button btnStart;
+        public System.Windows.Forms.CheckBox chIsStructural;
     }
 }
