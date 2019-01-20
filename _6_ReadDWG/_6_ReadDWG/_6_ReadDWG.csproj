@@ -31,9 +31,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Revit.IFC.Export">
+      <HintPath>C:\Program Files\Autodesk\Revit 2019\Revit.IFC.Export.dll</HintPath>
+    </Reference>
     <Reference Include="RevitAPI">
       <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2019\RevitAPI.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>C:\Program Files\Autodesk\Revit 2019\RevitAPIIFC.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIUI">
       <HintPath>..\..\..\..\..\..\Program Files\Autodesk\Revit 2019\RevitAPIUI.dll</HintPath>
@@ -59,7 +65,10 @@
     <Compile Include="CreateFloors.cs" />
     <Compile Include="CreateFloor_Version2.cs" />
     <Compile Include="CreateLightObject.cs" />
+    <Compile Include="CreateWallByRoomEdgeOrClickWall.cs" />
     <Compile Include="FailureHandler.cs" />
+    <Compile Include="Flatten.cs" />
+    <Compile Include="FlattenProcessing.cs" />
     <Compile Include="FloorEdges.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -80,11 +89,23 @@
     <Compile Include="Form_CreateFloorByCADHash.Designer.cs">
       <DependentUpon>Form_CreateFloorByCADHash.cs</DependentUpon>
     </Compile>
+    <Compile Include="Form_CreateFloorByRoomEdges.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_CreateFloorByRoomEdges.Designer.cs">
+      <DependentUpon>Form_CreateFloorByRoomEdges.cs</DependentUpon>
+    </Compile>
     <Compile Include="Form_CreateLight.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Form_CreateLight.Designer.cs">
       <DependentUpon>Form_CreateLight.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form_CreateWallByRoomEdgeOrClickWall.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form_CreateWallByRoomEdgeOrClickWall.Designer.cs">
+      <DependentUpon>Form_CreateWallByRoomEdgeOrClickWall.cs</DependentUpon>
     </Compile>
     <Compile Include="Form_InsertCommentToBeam.cs">
       <SubType>Form</SubType>
@@ -110,6 +131,7 @@
     <Compile Include="MATRIX.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RevitUs.cs" />
+    <Compile Include="VECTOR.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Form1.resx">
@@ -121,8 +143,14 @@
     <EmbeddedResource Include="Form_CreateFloorByCADHash.resx">
       <DependentUpon>Form_CreateFloorByCADHash.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Form_CreateFloorByRoomEdges.resx">
+      <DependentUpon>Form_CreateFloorByRoomEdges.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Form_CreateLight.resx">
       <DependentUpon>Form_CreateLight.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form_CreateWallByRoomEdgeOrClickWall.resx">
+      <DependentUpon>Form_CreateWallByRoomEdgeOrClickWall.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Form_InsertCommentToBeam.resx">
       <DependentUpon>Form_InsertCommentToBeam.cs</DependentUpon>

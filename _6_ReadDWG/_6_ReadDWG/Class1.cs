@@ -12,6 +12,7 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.UI.Selection;
+using Autodesk.Revit.DB.IFC;
 
 /// <summary>
 /// 2018/11/17
@@ -51,17 +52,18 @@ namespace _6_ReadDWG
         {
 
             string getPath = Path.Combine(startPath, "CAD_REVIT_DATA");
+            UIApplication uiapp = commandData.Application;
+            Application app = uiapp.Application;
             revitDoc = commandData.Application.ActiveUIDocument.Document;
             uidoc = commandData.Application.ActiveUIDocument;
-            ElementId ele = null;
-            Selection selection = uidoc.Selection;
-            ICollection<ElementId> element = selection.GetElementIds();
-            foreach (ElementId eleID in element)
-            {
-                ele = eleID;
-                break;
-            }
-            //Element e = revitDoc.GetElement(ele);
+            ForTest();
+
+
+
+            //CreateWallByRoomEdgeOrClickWall test = new CreateWallByRoomEdgeOrClickWall();
+            //test.Main_CreateWallByRoom(revitDoc, uidoc, uiapp, app);
+
+
 
             ////// Processing Part
             //Parameter PP = e.get_Parameter(BuiltInParameter.DOOR_NUMBER);
@@ -97,49 +99,47 @@ namespace _6_ReadDWG
             //BuiltInParameter height = BuiltInParameter.ALL_MODEL_TYPE_MARK;
 
             //Parameter h = type.get_Parameter(height);  
-            //return Result.Succeeded;
-
-            //CreateFloorByCADHashRegion test = new CreateFloorByCADHashRegion();
-            //test.Main_Create(revitDoc, uidoc);
-
-            MainForm mainform = new MainForm();
-            mainform.ShowDialog();
-
-            if (mainform.CASEName == 0)
-            {
-                CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
-                Creation.Create_Version_2(revitDoc, uidoc);
-            }
-            else if (mainform.CASEName == 1)
-            {
-                Floor_Created_Main();
-
-            }
-            else if (mainform.CASEName == 2)
-            {
-
-                CreateLightObject Createion = new CreateLightObject();
-                Createion.Main_Create(revitDoc, uidoc);
-            }
-            else
-            {
-                InsertComment ISC = new InsertComment();
-                ISC.Main_Create(revitDoc, uidoc);
-
-            }
-
-
-
-
-            //GetCADTest(revitDoc);
-
-
-
-
             return Result.Succeeded;
+
+            //MainForm mainform = new MainForm();
+            //mainform.ShowDialog();
+
+            //if (mainform.CASEName == 0)
+            //{
+            //    CreateBeamsAndColumns Creation = new CreateBeamsAndColumns();
+            //    Creation.Create_Version_2(revitDoc, uidoc);
+            //}
+            //else if (mainform.CASEName == 1)
+            //{
+            //    Floor_Created_Main();
+
+            //}
+            //else if (mainform.CASEName == 2)
+            //{
+
+            //    CreateLightObject Createion = new CreateLightObject();
+            //    Createion.Main_Create(revitDoc, uidoc);
+            //}
+            //else
+            //{
+            //    InsertComment ISC = new InsertComment();
+            //    ISC.Main_Create(revitDoc, uidoc);
+            //}
+
+            //return Result.Succeeded;
         }
 
-       
+
+        private void ForTest()
+        { 
+            FlattenProcessing FTP = new FlattenProcessing();
+            FTP.ForTest(uidoc, revitDoc); 
+        }
+         
+
+
+
+
 
 
 
@@ -153,31 +153,26 @@ namespace _6_ReadDWG
         {
 
             Document doc = uidoc.Document;
-
-
-
-
-
             View active_view = doc.ActiveView;
             List<GeometryObject> visible_dwg_geo = new List<GeometryObject>();
 
             // Pick Import Instance 
             Reference r = uidoc.Selection.PickObject(ObjectType.Element, new JtElementsOfClassSelectionFilter<ImportInstance>());
             ImportInstance dwg = doc.GetElement(r) as ImportInstance;
-            FilteredElementCollector col  = new FilteredElementCollector(doc) .OfClass(typeof(ImportInstance));
-             
+            FilteredElementCollector col = new FilteredElementCollector(doc).OfClass(typeof(ImportInstance));
+
 
             foreach (GeometryObject geometryObj in dwg.get_Geometry(new Options()))
-            { 
+            {
 
                 if (geometryObj is GeometryInstance) // This will be the whole thing
                 {
 
-                    GeometryInstance dwgInstance = geometryObj as GeometryInstance; 
+                    GeometryInstance dwgInstance = geometryObj as GeometryInstance;
                     var test = dwgInstance.Symbol;
                     foreach (GeometryObject blockObject in dwgInstance.SymbolGeometry)
                     {
-                         
+
                         if (blockObject is GeometryInstance) // This could be a block
                         {
                             //get the object name and coordinates and rotation and 
@@ -193,8 +188,8 @@ namespace _6_ReadDWG
                             XYZ vectorTran = transform.OfVector(transform.BasisX.Normalize());
                             double rot = transform.BasisX.AngleOnPlaneTo(vectorTran, transform.BasisZ.Normalize()); // radians
                             rot = rot * (180 / Math.PI); // degrees
-                             
-                             
+
+
                         }
                     }
                 }
@@ -202,7 +197,7 @@ namespace _6_ReadDWG
 
 
         }
-        
+
 
 
         private void GetParameters(ParameterSet parameters)
@@ -237,7 +232,7 @@ namespace _6_ReadDWG
             FormFloor.ShowDialog();
 
             if (FormFloor.DialogResult == System.Windows.Forms.DialogResult.OK)
-            { 
+            {
                 /// 取得梁目標樓層 
                 Level targetLevelBeam = levels[FormFloor.cmbfloorLevel.SelectedIndex];
                 /// 取得柱目標樓層 

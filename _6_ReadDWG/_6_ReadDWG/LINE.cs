@@ -129,7 +129,7 @@ namespace _6_ReadDWG
             this.Length = this.GetLength();
             this.OriPoint = new XYZ(this.GetStartPoint().X, this.GetStartPoint().Y, this.GetStartPoint().Z);
 
-            this.Direction = new XYZ(Math.Round(dx / this.GetLength(),4), Math.Round(dy / this.GetLength(),4), 0);
+            this.Direction = new XYZ(Math.Round(dx / this.GetLength(),4), Math.Round(dy / this.GetLength(),4), Math.Round(dz / this.GetLength(), 4));
 
         }
 

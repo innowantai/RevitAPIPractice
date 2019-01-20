@@ -39,13 +39,12 @@ namespace _6_ReadDWG
             }
         }
 
-        public CADGeoObject(CADGeoObject oriData, XYZ SHIFT)
+        public CADGeoObject(CADGeoObject oriData, XYZ SHIFT, double Sita)
         {
             this.Data = null;
             this.Layer = oriData.Layer;
-            this.Text = oriData.Text;
-            this.Point = new XYZ(oriData.Point.X - SHIFT.X, oriData.Point.Y - SHIFT.Y, 0);
-
+            this.Text = oriData.Text; 
+            this.Point = RotationAndShift(Sita, SHIFT, oriData.Point); 
         }
 
 
@@ -81,6 +80,16 @@ namespace _6_ReadDWG
 
             }
         }
+
+
+
+        private XYZ RotationAndShift(double Sita, XYZ SHIFT, XYZ oriPoint)
+        {
+            double newX = oriPoint.X * Math.Cos(Sita) - oriPoint.Y * Math.Sin(Sita);
+            double newY = oriPoint.X * Math.Sin(Sita) + oriPoint.Y * Math.Cos(Sita);
+            return new XYZ(newX + SHIFT.X, newY + SHIFT.Y, 0);
+        }
+
 
     }
 }

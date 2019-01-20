@@ -20,11 +20,13 @@ namespace _6_ReadDWG
 {
     public partial class Form_InsertCommentToBeam : System.Windows.Forms.Form
     {
+        private List<string> Levels;
+        private List<string> SelectedLevel;
         public List<Level> levels;
+        public List<Level> OUT_SelectedLevels;
         private List<System.Windows.Forms.ComboBox> comboBoxes;
         private List<System.Windows.Forms.TextBox> txtBoxes;
         private string LastIndexesSavePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        private List<string> CADLayers;
         public Form_InsertCommentToBeam(List<Level> levels_)
         {
             this.levels = new List<Level>();
@@ -38,17 +40,39 @@ namespace _6_ReadDWG
 
         private void Form_InsertCommentToBeam_Load(object sender, EventArgs e)
         {
+            this.Levels = new List<string>();
+            this.SelectedLevel = new List<string>();
+            this.comboBoxes = new List<System.Windows.Forms.ComboBox>() { this.cmbFamilyType };
+            this.txtBoxes = new List<System.Windows.Forms.TextBox>() { this.txtFilePath };
+            List<string> tmpData = readData();
+            txtFilePath.Text = txtFilePath.Text == "0" ? "D:" : txtFilePath.Text;
+
             /// 將Levels加入cmvLevel中
             foreach (Level level in this.levels)
             {
-                cmbLevels.Items.Add(level.Name);
+                this.Levels.Add(level.Name);
             }
             /// 
 
-            this.comboBoxes = new List<System.Windows.Forms.ComboBox>() { this.cmbLevels };
-            this.txtBoxes = new List<System.Windows.Forms.TextBox>() { this.txtFilePath };
-            readData();
-            txtFilePath.Text = txtFilePath.Text == "0" ? "D:" : txtFilePath.Text;
+
+            foreach (string item in this.Levels)
+            {
+                if (tmpData.Contains(item))
+                {
+                    this.SelectedLevel.Add(item);
+                }
+                else
+                {
+                    this.listOri.Items.Add(item);
+                }
+            }
+
+
+            foreach (string item in this.SelectedLevel)
+            {
+                this.listSelected.Items.Add(item);
+            }
+
 
         }
 
@@ -56,6 +80,15 @@ namespace _6_ReadDWG
 
         private void button1_Click(object sender, EventArgs e)
         {
+            this.OUT_SelectedLevels = new List<Level>();
+            foreach (Level item in this.levels)
+            {
+                if (this.SelectedLevel.Contains(item.Name))
+                {
+                    this.OUT_SelectedLevels.Add(item);
+                }
+            }
+
 
             saveData();
             this.DialogResult = DialogResult.OK;
@@ -70,15 +103,9 @@ namespace _6_ReadDWG
 
 
 
-        private void txtFilePath_MouseClick(object sender, MouseEventArgs e)
-        {
-            SelectedDialog();
-        }
-
-
         private void SelectedDialog()
         {
-            OpenFileDialog ofd = new OpenFileDialog(); //不用從工具拉，要用到才NEW
+            OpenFileDialog ofd = new OpenFileDialog();
             if (string.IsNullOrEmpty(ofd.InitialDirectory))
                 ofd.InitialDirectory = txtFilePath.Text;  // 預設路徑
 
@@ -91,9 +118,7 @@ namespace _6_ReadDWG
 
         }
 
-
-
-        private void readData()
+        private List<string> readData()
         {
             string path = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_COMMENTtoBEAM_CMB.txt");
 
@@ -143,8 +168,25 @@ namespace _6_ReadDWG
                     item.Text = "0";
                 }
             }
-        }
 
+            string path3 = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_PAST_SELECTED_ITEM_LEVELs.txt");
+            List<string> tmpData = new List<string>();
+            try
+            {
+                using (StreamReader sr = new StreamReader(path3))
+                {
+                    while (sr.Peek() != -1)
+                    {
+                        tmpData.Add(sr.ReadLine());
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return tmpData;
+        }
 
         private void saveData()
         {
@@ -164,7 +206,66 @@ namespace _6_ReadDWG
                 sw2.WriteLine(item.Text);
             }
             sw2.Close();
+
+
+            string path3 = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_PAST_SELECTED_ITEM_LEVELs.txt");
+            StreamWriter sw5 = new StreamWriter(path3);
+            foreach (string item in this.listSelected.Items)
+            {
+                sw5.WriteLine(item);
+            }
+            sw5.Close();
         }
 
+        private void listOri_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (this.Levels.Count != 0 && listOri.SelectedIndex != -1)
+            {
+                this.SelectedLevel.Add(this.Levels[listOri.SelectedIndex]);
+                this.Levels.Remove(this.Levels[listOri.SelectedIndex]);
+                this.Levels.Sort();
+                this.SelectedLevel.Sort();
+                this.listOri.Items.Clear();
+
+                foreach (string item in this.Levels)
+                {
+                    this.listOri.Items.Add(item);
+                }
+
+                this.listSelected.Items.Clear();
+                foreach (string item in this.SelectedLevel)
+                {
+                    this.listSelected.Items.Add(item);
+                }
+
+            }
+        }
+
+        private void listSelected_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (this.SelectedLevel.Count != 0 && this.listSelected.SelectedIndex != -1)
+            {
+                this.Levels.Add(this.SelectedLevel[this.listSelected.SelectedIndex]);
+                this.SelectedLevel.Remove(this.SelectedLevel[this.listSelected.SelectedIndex]);
+
+                this.Levels.Sort();
+                this.SelectedLevel.Sort();
+                this.listOri.Items.Clear();
+
+                foreach (string item in this.Levels)
+                {
+                    this.listOri.Items.Add(item);
+                }
+
+
+                this.listSelected.Items.Clear();
+                foreach (string item in this.SelectedLevel)
+                {
+                    this.listSelected.Items.Add(item);
+                }
+
+            }
+        }
+         
     }
 }

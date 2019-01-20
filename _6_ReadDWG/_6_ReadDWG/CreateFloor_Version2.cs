@@ -949,6 +949,65 @@ namespace _6_ReadDWG
             return ResultColumns;
         }
 
+
+
+        /// <summary>
+        /// 幾何 -> 固體 -> 表面 -> 邊
+        /// Geomerty -> Solid -> surface -> edges
+        /// </summary>
+        /// <param name="famulyOfColumns"></param>
+        private CurveLoop GetFaceEdgelines(FamilyInstance famulyOfColumns)
+        {
+            CurveLoop curveLoop = new CurveLoop();
+            Options opt = new Options();
+            opt.ComputeReferences = true;
+            opt.DetailLevel = ViewDetailLevel.Fine;
+            GeometryElement geomElem = famulyOfColumns.get_Geometry(opt);
+            if (geomElem != null)
+            {
+                /// GeometryElement 包含三個枚舉(GeometryInstance, Solid, Solid)
+                foreach (var item in geomElem)
+                {
+                    /// 取得Type為Solid的枚舉
+                    if (item.GetType().Name == "Solid")
+                    {
+                        /// 轉換至Solid型態
+                        Solid solid = item as Solid;
+
+                        /// 若無面，略過
+                        if (solid.Faces.Size == 0) continue;
+
+                        /// 列舉Solid所有面
+                        foreach (Face face in solid.Faces)
+                        {
+                            /// 轉換至Surface型態
+                            Surface surface = face.GetSurface();
+
+                            /// 若為平面 else 圓柱面
+                            if (face.GetType().Name == "PlanarFace")
+                            {
+                                Plane plane = surface as Plane;
+                                /// 取得基準面
+                                if (Math.Round(plane.Normal.X, 2) == 0 && Math.Round(plane.Normal.Y, 2) == 0 && Math.Round(plane.Normal.Z, 2) == -1)
+                                {
+                                    curveLoop = face.GetEdgesAsCurveLoops()[0];
+                                }
+                            }
+                            else if (face.GetType().Name == "CylindricalFace")
+                            {
+                                CylindricalSurface csf = surface as CylindricalSurface;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return curveLoop;
+        }
+
+
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -1085,60 +1144,6 @@ namespace _6_ReadDWG
             return floor;
         }
 
-
-        /// <summary>
-        /// 幾何 -> 固體 -> 表面 -> 邊
-        /// Geomerty -> Solid -> surface -> edges
-        /// </summary>
-        /// <param name="famulyOfColumns"></param>
-        private CurveLoop GetFaceEdgelines(FamilyInstance famulyOfColumns)
-        {
-            CurveLoop curveLoop = new CurveLoop();
-            Options opt = new Options();
-            opt.ComputeReferences = true;
-            opt.DetailLevel = ViewDetailLevel.Fine;
-            GeometryElement geomElem = famulyOfColumns.get_Geometry(opt);
-            if (geomElem != null)
-            {
-                /// GeometryElement 包含三個枚舉(GeometryInstance, Solid, Solid)
-                foreach (var item in geomElem)
-                {
-                    /// 取得Type為Solid的枚舉
-                    if (item.GetType().Name == "Solid")
-                    {
-                        /// 轉換至Solid型態
-                        Solid solid = item as Solid;
-
-                        /// 若無面，略過
-                        if (solid.Faces.Size == 0) continue;
-
-                        /// 列舉Solid所有面
-                        foreach (Face face in solid.Faces)
-                        {
-                            /// 轉換至Surface型態
-                            Surface surface = face.GetSurface();
-
-                            /// 若為平面 else 圓柱面
-                            if (face.GetType().Name == "PlanarFace")
-                            {
-                                Plane plane = surface as Plane;
-                                /// 取得基準面
-                                if (Math.Round(plane.Normal.X, 2) == 0 && Math.Round(plane.Normal.Y, 2) == 0 && Math.Round(plane.Normal.Z, 2) == -1)
-                                {
-                                    curveLoop = face.GetEdgesAsCurveLoops()[0];
-                                }
-                            }
-                            else if (face.GetType().Name == "CylindricalFace")
-                            {
-                                CylindricalSurface csf = surface as CylindricalSurface;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return curveLoop;
-        }
 
 
 

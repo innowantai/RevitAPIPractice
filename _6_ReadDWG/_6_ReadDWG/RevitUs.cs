@@ -65,7 +65,7 @@ namespace _6_ReadDWG
             {
                 trans.Start("Create Column");
                 FamilyInstance familyInstance = null;
-                familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, baseLevel, StructuralType.NonStructural); 
+                familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, baseLevel, StructuralType.NonStructural);
                 //familyInstance = revitDoc.Create.NewFamilyInstance(points, Type, StructuralType.NonStructural);
                 trans.Commit();
             }
@@ -154,6 +154,21 @@ namespace _6_ReadDWG
         /// </summary>
         /// <param name="doc"></param>
         /// <returns></returns>
+        public List<Element> GetDocRooms(Document doc )
+        {
+
+            /// 取得所有板的種類
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            collector.OfCategory(BuiltInCategory.OST_Rooms);
+            List<Element> floorTypes = collector.ToList().OrderBy(t => t.Name).ToList();
+            return floorTypes;
+        }
+
+        /// <summary>
+        /// Get Beam Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
         public List<Element> GetDocFloorTypes(Document doc)
         {
             /// 取得所有板的種類
@@ -163,6 +178,29 @@ namespace _6_ReadDWG
             return floorTypes;
         }
 
+
+        /// <summary>
+        /// Get Beam Types
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public List<Element> GetDocWallTypes(Document doc)
+        {
+            /// 取得所有板的種類
+            FilteredElementCollector collector = new FilteredElementCollector(doc);
+            collector.OfCategory(BuiltInCategory.OST_Walls);
+            List<Element> floorTypes_ = collector.ToList().OrderBy(t => t.Name).ToList();
+            List<Element> floorTypes = new List<Element>();
+            foreach (Element item in floorTypes_)
+            {
+                if (item.GetType().Name == "WallType")
+                {
+                    floorTypes.Add(item);
+                }
+            }
+
+            return floorTypes;
+        }
 
         /// <summary>
         /// Get Beam Types
@@ -197,7 +235,7 @@ namespace _6_ReadDWG
         /// <param name="doc"></param>
         /// <returns></returns>
         public Dictionary<string, List<FamilySymbol>> GetDocLightTypes(Document doc)
-        { 
+        {
 
             return new FilteredElementCollector(doc)
                         .WherePasses(new ElementClassFilter(typeof(FamilySymbol)))

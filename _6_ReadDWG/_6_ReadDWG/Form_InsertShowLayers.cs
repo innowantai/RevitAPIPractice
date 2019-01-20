@@ -22,16 +22,18 @@ namespace _6_ReadDWG
     public partial class Form_InsertShowLayers : System.Windows.Forms.Form
     {
         private List<System.Windows.Forms.ComboBox> comboBoxes;
-        private List<System.Windows.Forms.TextBox> txtBoxes;
         private string LastIndexesSavePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         private List<string> CADLayers;
+        private List<string> SelectedCADLayers;
         private List<CADGeoObject> DATA;
         public List<CADGeoObject> Selected_DATA;
 
         public Form_InsertShowLayers(List<CADGeoObject> DATA_CAD_TEXT)
         {
-            DATA = DATA_CAD_TEXT.OrderBy(t => t.Layer).ToList(); 
+            DATA = DATA_CAD_TEXT.OrderBy(t => t.Layer).ToList();
             this.CADLayers = new List<string>();
+            this.SelectedCADLayers = new List<string>();
+            this.Selected_DATA = new List<CADGeoObject>();
             foreach (CADGeoObject item in DATA)
             {
                 if (!this.CADLayers.Contains(item.Layer))
@@ -39,22 +41,34 @@ namespace _6_ReadDWG
                     this.CADLayers.Add(item.Layer);
                 }
             }
-             
+
             InitializeComponent();
         }
 
         private void Form_InsertShowLayers_Load(object sender, EventArgs e)
         {
+            List<string> PastData = readData();
             foreach (string Layer in this.CADLayers)
             {
-                cmbLayerCAD.Items.Add(Layer);
+                if (PastData.Contains(Layer))
+                {
+                    this.SelectedCADLayers.Add(Layer);
+                }
+                else
+                { 
+                    this.listOri.Items.Add(Layer);
+                }
             }
-            this.comboBoxes = new List<System.Windows.Forms.ComboBox>() { this.cmbLayerCAD };
-            this.txtBoxes = new List<System.Windows.Forms.TextBox>() { };
-            readData();
+
+
+            foreach (string Layer in this.SelectedCADLayers)
+            {
+                listSelected.Items.Add(Layer);
+            }
+
+
+
         }
-
-
 
 
         private void btnStart_Click(object sender, EventArgs e)
@@ -68,96 +82,110 @@ namespace _6_ReadDWG
 
 
         private void GetSelectLayerData()
-        {
-            var tmp = from tt in this.DATA
-                      where tt.Layer.Trim() == this.cmbLayerCAD.SelectedItem.ToString().Trim()
-                      select tt;
-
-            this.Selected_DATA = tmp.ToList();
-
+        { 
+            foreach (string layer in this.listSelected.Items)
+            {
+                List<CADGeoObject> tmpData = GetSelectLayerDatas(layer);
+                foreach (CADGeoObject item in tmpData)
+                {
+                    this.Selected_DATA.Add(item);
+                }
+            } 
         }
 
-
-
-
-
-
-
-
-
-
-
-        private void readData()
+        private List<CADGeoObject> GetSelectLayerDatas(string Layers)
         {
-            string path = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_COMMENTtoBEAM_CMB_2.txt");
+            var tmp = from tt in this.DATA
+                      where tt.Layer.Trim() == Layers
+                      select tt;
 
+            return tmp.ToList();
+
+        }
+       
+
+
+        private List<string> readData()
+        {
+            string path = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_PAST_SELECTED_ITEM.txt");
+            List<string> tmpData = new List<string>();
             try
             {
                 using (StreamReader sr = new StreamReader(path))
                 {
-                    int kk = 0;
                     while (sr.Peek() != -1)
                     {
-                        int po = Convert.ToInt32(sr.ReadLine());
-                        this.comboBoxes[kk].SelectedIndex = po;
-                        kk++;
+                        tmpData.Add(sr.ReadLine());
                     }
                 }
             }
             catch (Exception)
             {
-                foreach (System.Windows.Forms.ComboBox item in this.comboBoxes)
-                {
-                    if (item.Items.Count != 0)
-                    {
-                        item.SelectedIndex = 0;
-                    }
-                }
             }
 
+            return tmpData;
 
-            string path2 = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_COMMENTtoBEAM_TEXT_2.txt");
-
-            try
-            {
-                using (StreamReader sr = new StreamReader(path2))
-                {
-                    int kk = 0;
-                    while (sr.Peek() != -1)
-                    {
-                        this.txtBoxes[kk].Text = sr.ReadLine();
-                        kk++;
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                foreach (System.Windows.Forms.TextBox item in this.txtBoxes)
-                {
-                    item.Text = "0";
-                }
-            }
         }
 
         private void saveData()
         {
-            string path = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_COMMENTtoBEAM_CMB_2.txt");
+            string path = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_PAST_SELECTED_ITEM.txt");
             StreamWriter sw = new StreamWriter(path);
-            foreach (System.Windows.Forms.ComboBox item in this.comboBoxes)
+            foreach (string item in this.listSelected.Items)
             {
-                sw.WriteLine(item.SelectedIndex);
+                sw.WriteLine(item);
             }
             sw.Close();
-
-
-            string path2 = Path.Combine(LastIndexesSavePath, "REVIT_INSERT_COMMENTtoBEAM_TEXT_2.txt");
-            StreamWriter sw2 = new StreamWriter(path2);
-            foreach (System.Windows.Forms.TextBox item in this.txtBoxes)
-            {
-                sw2.WriteLine(item.Text);
-            }
-            sw2.Close();
         }
 
+        private void listOriLayers_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (this.CADLayers.Count != 0 && listOri.SelectedIndex != -1)
+            {
+                this.SelectedCADLayers.Add(this.CADLayers[listOri.SelectedIndex]);
+                this.CADLayers.Remove(this.CADLayers[listOri.SelectedIndex]);
+                this.CADLayers.Sort();
+                this.SelectedCADLayers.Sort();
+                this.listOri.Items.Clear();
+
+                foreach (string item in this.CADLayers)
+                {
+                    this.listOri.Items.Add(item);
+                }
+
+                this.listSelected.Items.Clear();
+                foreach (string item in this.SelectedCADLayers)
+                {
+                    this.listSelected.Items.Add(item);
+                }
+
+            }
+        }
+
+        private void listSelectedLayers_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (this.SelectedCADLayers.Count != 0 && this.listSelected.SelectedIndex != -1)
+            {
+                this.CADLayers.Add(this.SelectedCADLayers[this.listSelected.SelectedIndex]);
+                this.SelectedCADLayers.Remove(this.SelectedCADLayers[this.listSelected.SelectedIndex]);
+
+                this.CADLayers.Sort();
+                this.SelectedCADLayers.Sort();
+                this.listOri.Items.Clear();
+
+                foreach (string item in this.CADLayers)
+                {
+                    this.listOri.Items.Add(item);
+                }
+
+
+                this.listSelected.Items.Clear();
+                foreach (string item in this.SelectedCADLayers)
+                {
+                    this.listSelected.Items.Add(item);
+                }
+
+            }
+        }
     }
 }

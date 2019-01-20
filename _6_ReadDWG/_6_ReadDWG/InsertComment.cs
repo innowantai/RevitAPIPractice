@@ -23,6 +23,7 @@ namespace _6_ReadDWG
         public void Main_Create(Document revitDoc, UIDocument uidoc)
         {
 
+
             /// 建立CAD處理物件
             GetCADImformation GetCADImformation = new GetCADImformation(true, true, true);
             GetCADImformation.CADProcessing(uidoc);
@@ -30,11 +31,11 @@ namespace _6_ReadDWG
             /// 讀取Revit匯入之CAD圖層 
             Dictionary<string, List<LINE>> CADGeometry = GetCADImformation.LayersAndGeometries;
 
-            if (CADGeometry == null) return;
+            //if (CADGeometry == null) return;
+            //LINE SHIFT2 = CADGeometry[ModifyLayerName][0];
 
-            //LINE SHIFT = CADGeometry[ModifyLayerName][0];
             XYZ SHIFT = GetCADImformation.Origin;
-
+            double Rotation = GetCADImformation.Rotation;
 
             /// 擷取Revit所有樓層資訊
             List<Level> levels = RevFind.GetLevels(revitDoc);
@@ -55,24 +56,90 @@ namespace _6_ReadDWG
                 FIC_Layer.ShowDialog();
                 if (FIC_Layer.DialogResult == System.Windows.Forms.DialogResult.OK)
                 {
-                    List<CADGeoObject> TEXT_DATA = FIC_Layer.Selected_DATA; 
+                    List<CADGeoObject> TEXT_DATA = FIC_Layer.Selected_DATA;
                     /// Revit-CAD 與 CAD 座標偏移計算 
-                    List<CADGeoObject> RESULT = ShiftProcessing(DATA_CAD_GEOM, SHIFT, TEXT_DATA);
+                    List<CADGeoObject> RESULT = ShiftProcessing(TEXT_DATA, SHIFT, Rotation);
+                    List<CADGeoObject> GeoRESULT = ShiftProcessing(DATA_CAD_GEOM, SHIFT, Rotation);
 
-                    /// 取得所選取之樓層
-                    Level targetLevel = FIC.levels[FIC.cmbLevels.SelectedIndex];
-                    /// 取得Revit中所選樓層之所有梁物件
-                    List<Element> Ele_BEAMS_OUT = new List<Element>();
-                    List<LINE> BEAMS = GetTargetFloorBeams(revitDoc, targetLevel, ref Ele_BEAMS_OUT);
-                    InsertCommentToBeams(revitDoc, BEAMS, Ele_BEAMS_OUT, RESULT);
+                    /// 取得所選取之樓層  
+                    string Message = "";
+                    foreach (Level targetLevel in FIC.OUT_SelectedLevels)
+                    {
+                        string mess = "";
+                        if (FIC.cmbFamilyType.SelectedIndex == 0)
+                        {
+                            /// 取得Revit中所選樓層之所有梁物件
+                            List<Element> Ele_BEAMS_OUT = new List<Element>();
+                            List<Element> Ele_BEAMS_OUT_ = new List<Element>();
+                            List<LINE> BEAMS_ = GetTargetFloorBeams(revitDoc, targetLevel, ref Ele_BEAMS_OUT_);
+                            List<LINE> BEAMS = FilterObjectInRange(BEAMS_, GeoRESULT, Ele_BEAMS_OUT_, ref Ele_BEAMS_OUT);
+                            mess = InsertCommentToBeams(revitDoc, BEAMS, Ele_BEAMS_OUT, RESULT, FIC.cmbFamilyType.SelectedIndex);
+                        }
+                        else if (FIC.cmbFamilyType.SelectedIndex == 1)
+                        {
+                            List<Element> Ele_COLUMNs_OUT_ = new List<Element>();
+                            List<Element> Ele_COLUMNs_OUT = new List<Element>();
+                            List<LINE> Columns_ = GetAllColumnsCenterByLocation(revitDoc, targetLevel, ref Ele_COLUMNs_OUT_);
+                            List<LINE> Columns = FilterObjectInRange(Columns_, GeoRESULT, Ele_COLUMNs_OUT_, ref Ele_COLUMNs_OUT);
+                            mess = InsertCommentToBeams(revitDoc, Columns, Ele_COLUMNs_OUT, RESULT, FIC.cmbFamilyType.SelectedIndex);
+
+                        }
+                        Message += "第" + targetLevel.Name + "層," + mess;
+                    }
+
+                    System.Windows.Forms.MessageBox.Show(Message);
                 }
             }
-
-
         }
 
-        private void InsertCommentToBeams(Document revitDoc, List<LINE> BEAMS, List<Element> Ele_BEAMS_OUT, List<CADGeoObject> RESULT)
+        private List<LINE> FilterObjectInRange(List<LINE> BEAMS, List<CADGeoObject> GeoRESULT, List<Element> Ele_COLUMNs_OUT_, ref List<Element> Ele_COLUMNs_OUT)
+        { 
+            int kk = 0;
+            List<LINE> RESULT = new List<LINE>();
+            foreach (LINE item in BEAMS)
+            { 
+                    RESULT.Add(item);
+                    Ele_COLUMNs_OUT.Add(Ele_COLUMNs_OUT_[kk]); 
+                kk++;
+            }
+
+            return RESULT;
+        }
+
+
+        private List<LINE> FilterObjectInRange_Range(List<LINE> BEAMS, List<CADGeoObject> GeoRESULT, List<Element> Ele_COLUMNs_OUT_, ref List<Element> Ele_COLUMNs_OUT)
         {
+            double min_x = GeoRESULT.Min(t => t.Point.X);
+            double min_y = GeoRESULT.Min(t => t.Point.Y);
+            double max_x = GeoRESULT.Max(t => t.Point.X);
+            double max_y = GeoRESULT.Max(t => t.Point.Y);
+            int kk = 0;
+            List<LINE> RESULT = new List<LINE>();
+            foreach (LINE item in BEAMS)
+            {
+                if (item.GetStartPoint().X > min_x && item.GetStartPoint().Y > min_y &&
+                    item.GetStartPoint().X < max_x && item.GetStartPoint().Y < max_y)
+                {
+                    RESULT.Add(item);
+                    Ele_COLUMNs_OUT.Add(Ele_COLUMNs_OUT_[kk]);
+                }
+                kk++;
+            }
+
+            return RESULT;
+        }
+
+
+        /// <summary>
+        /// 插入標簽到物件中
+        /// </summary>
+        /// <param name="revitDoc"></param>
+        /// <param name="BEAMS"></param>
+        /// <param name="Ele_BEAMS_OUT"></param>
+        /// <param name="RESULT"></param>
+        /// <param name="CASE"></param>
+        private string InsertCommentToBeams(Document revitDoc, List<LINE> BEAMS, List<Element> Ele_BEAMS_OUT, List<CADGeoObject> RESULT, int CASE)
+        { 
             List<int> Text_Po = new List<int>();
             for (int i = 0; i < BEAMS.Count; i++)
             {
@@ -82,7 +149,8 @@ namespace _6_ReadDWG
                 {
                     if (Text_Po.Contains(j)) continue;
 
-                    XYZ Point1 = (BEAMS[i].GetStartPoint() + BEAMS[i].GetEndPoint()) / 2;
+                    XYZ Point1 = CASE == 0 ? (BEAMS[i].GetStartPoint() + BEAMS[i].GetEndPoint()) / 2 :
+                                              BEAMS[i].GetStartPoint();
                     XYZ Point2 = RESULT[j].Point;
                     Dist.Add(GetDistance(Point1, Point2));
                     tmpPo.Add(j);
@@ -109,17 +177,24 @@ namespace _6_ReadDWG
                 trans.Commit();
             }
             ///
+
+            // System.Windows.Forms.MessageBox.Show(Mark.Count.ToString());
+
+            return "處理" + Mark.Count.ToString() + "個物件  \r\n";
         }
 
-
+        /// <summary>
+        /// 計算兩點平面距離
+        /// </summary>
+        /// <param name="Point1"></param>
+        /// <param name="Point2"></param>
+        /// <returns></returns>
         private double GetDistance(XYZ Point1, XYZ Point2)
         {
             return Math.Sqrt((Point1.X - Point2.X) * (Point1.X - Point2.X) +
                              (Point1.Y - Point2.Y) * (Point1.Y - Point2.Y)
                              );
         }
-
-
 
         /// <summary>
         /// CAD TEXT 座標偏移量處理 , Will Add Rotation Property
@@ -128,25 +203,55 @@ namespace _6_ReadDWG
         /// <param name="RevitCADMin"></param>
         /// <param name="TEXT_DATA"></param>
         /// <returns></returns>
-        private List<CADGeoObject> ShiftProcessing(List<CADGeoObject> DATA_CAD_GEOM, XYZ RevitCADMin, List<CADGeoObject> TEXT_DATA)
+        private List<CADGeoObject> ShiftProcessing(List<CADGeoObject> TEXT_DATA, XYZ RevitCADMin, double Rotation)
         {
 
-
-            double DX = -RevitCADMin.X;
-            double DY = -RevitCADMin.Y;
-
+            double DX = RevitCADMin.X;
+            double DY = RevitCADMin.Y;
 
             XYZ SHIFT = new XYZ(DX, DY, 0);
             List<CADGeoObject> RESULT = new List<CADGeoObject>();
             foreach (CADGeoObject item in TEXT_DATA)
             {
-                RESULT.Add(new CADGeoObject(item, SHIFT));
+                RESULT.Add(new CADGeoObject(item, SHIFT, Rotation));
             }
 
             return RESULT.OrderBy(t => t.Point.X).ToList();
 
         }
-                 
+
+
+        /// <summary>
+        /// 取得所有的Column
+        /// </summary>
+        /// <returns></returns>
+        private List<LINE> GetAllColumnsCenterByLocation(Document revitDoc, Level targetLevel, ref List<Element> Ele_COLUMNs_OUT)
+        {
+
+
+            FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
+
+            collector.OfCategory(BuiltInCategory.OST_StructuralColumns);
+            collector.OfClass(typeof(FamilyInstance));
+
+            IList<Element> columns = collector.ToElements();
+
+            List<LINE> ColumnsCenter = new List<LINE>();
+            foreach (FamilyInstance familyOfColumn in columns)
+            {
+                Level cLevel = revitDoc.GetElement(familyOfColumn.LevelId) as Level;
+                if (cLevel.Name == targetLevel.Name)
+                {
+                    Element ele = familyOfColumn as Element;
+                    Ele_COLUMNs_OUT.Add(ele);
+                    LocationPoint LP = familyOfColumn.Location as LocationPoint;
+                    XYZ pp = new XYZ(LP.Point.X, LP.Point.Y, 0);
+                    ColumnsCenter.Add(new LINE(pp, pp, 1));
+                }
+            }
+            return ColumnsCenter;
+        }
+
 
         /// <summary>
         /// 篩選指定樓層的梁
@@ -203,7 +308,7 @@ namespace _6_ReadDWG
             foreach (Element beam in beams)
             {
                 try
-                { 
+                {
                     ///// 取得梁的Level
                     Parameter mLevel = beam.get_Parameter(BuiltInParameter.INSTANCE_REFERENCE_LEVEL_PARAM);
                     string levelName = mLevel.AsValueString();
@@ -212,7 +317,7 @@ namespace _6_ReadDWG
                     ElementType type = revitDoc.GetElement(beam.GetTypeId()) as ElementType;
                     Parameter b = type.LookupParameter("b");
 
-                    double width = b == null ? 0 : b.AsDouble(); 
+                    double width = b == null ? 0 : b.AsDouble();
 
                     ///檢查梁中心線是否有偏移 
                     BuiltInParameter paraIndex = BuiltInParameter.START_Y_JUSTIFICATION;
@@ -271,7 +376,7 @@ namespace _6_ReadDWG
                 }
 
             }
-            return Beams; 
+            return Beams;
 
         }
 
@@ -306,11 +411,161 @@ namespace _6_ReadDWG
             sr.Close();
         }
 
-         
+
         public static int[] FindAllIndexof<T>(IEnumerable<T> values, T val)
         {
             return values.Select((b, i) => Equals(b, val) ? i : -1).Where(i => i != -1).ToArray();
         }
+
+
+
+        ///// <summary>
+        ///// 取得所有的Column
+        ///// </summary>
+        ///// <returns></returns>
+        //private List<LINE> GetAllColumnsBoundary(Document revitDoc, Level targetLevel, ref List<Element> Ele_COLUMNs_OUT)
+        //{
+        //    FilteredElementCollector collector = new FilteredElementCollector(revitDoc);
+
+        //    collector.OfCategory(BuiltInCategory.OST_StructuralColumns);
+        //    collector.OfClass(typeof(FamilyInstance));
+
+        //    IList<Element> columns = collector.ToElements();
+
+        //    Dictionary<string, List<LINE>> ResultColumns = new Dictionary<string, List<LINE>>();
+        //    List<LINE> ColumnsCenter = new List<LINE>();
+        //    int kk = 0;
+        //    foreach (FamilyInstance familyOfColumn in columns)
+        //    {
+        //        Level cLevel = revitDoc.GetElement(familyOfColumn.LevelId) as Level;
+        //        if (cLevel.Name == targetLevel.Name)
+        //        {
+        //            CurveLoop curve = GetFaceEdgelines(familyOfColumn);
+        //            List<LINE> Curves = new List<LINE>();
+        //            string Type = "";
+        //            foreach (Curve cc in curve)
+        //            {
+        //                if (cc.GetType().Name == "Line")
+        //                {
+        //                    Type = "Line";
+        //                    Line Line = cc as Line;
+        //                    Curves.Add(new LINE(Line.Origin, Line.Direction, Line.Length));
+        //                }
+        //            }
+        //            double mean_x = Curves.Sum(t => t.GetStartPoint().X) / Curves.Count;
+        //            double mean_y = Curves.Sum(t => t.GetStartPoint().Y) / Curves.Count;
+        //            XYZ pp = new XYZ(mean_x, mean_y, 0);
+        //            ColumnsCenter.Add(new LINE(pp, pp, 1));
+        //            //ResultColumns[kk.ToString() + " " + Type] = Curves;
+        //            Element ele = familyOfColumn as Element;
+        //            Ele_COLUMNs_OUT.Add(ele);
+        //            kk++;
+        //        }
+        //    }
+        //    return ColumnsCenter;
+        //}
+
+
+        ///// <summary>
+        ///// 幾何 -> 固體 -> 表面 -> 邊
+        ///// Geomerty -> Solid -> surface -> edges
+        ///// </summary>
+        ///// <param name="famulyOfColumns"></param>
+        //private CurveLoop GetFaceEdgelines(FamilyInstance famulyOfColumns)
+        //{
+        //    CurveLoop curveLoop = new CurveLoop();
+        //    Options opt = new Options();
+        //    opt.ComputeReferences = true;
+        //    opt.DetailLevel = ViewDetailLevel.Fine;
+        //    GeometryElement geomElem = famulyOfColumns.get_Geometry(opt);
+        //    if (geomElem != null)
+        //    {
+        //        /// GeometryElement 包含三個枚舉(GeometryInstance, Solid, Solid)
+        //        foreach (var item in geomElem)
+        //        {
+        //            /// 取得Type為Solid的枚舉
+        //            if (item.GetType().Name == "Solid")
+        //            {
+        //                /// 轉換至Solid型態
+        //                Solid solid = item as Solid;
+
+        //                /// 若無面，略過
+        //                if (solid.Faces.Size == 0) continue;
+
+        //                /// 列舉Solid所有面
+        //                foreach (Face face in solid.Faces)
+        //                {
+        //                    /// 轉換至Surface型態
+        //                    Surface surface = face.GetSurface();
+
+        //                    /// 若為平面 else 圓柱面
+        //                    if (face.GetType().Name == "PlanarFace")
+        //                    {
+        //                        Plane plane = surface as Plane;
+        //                        /// 取得基準面
+        //                        if (Math.Round(plane.Normal.X, 2) == 0 && Math.Round(plane.Normal.Y, 2) == 0 && Math.Round(plane.Normal.Z, 2) == -1)
+        //                        {
+        //                            curveLoop = face.GetEdgesAsCurveLoops()[0];
+        //                        }
+        //                    }
+        //                    else if (face.GetType().Name == "CylindricalFace")
+        //                    {
+        //                        CylindricalSurface csf = surface as CylindricalSurface;
+        //                    }
+        //                }
+        //            }
+        //            else
+        //            {
+        //                GeometryInstance GI = item as GeometryInstance;
+        //                curveLoop = GetEdgeSoildProcessing(GI);
+        //            }
+        //        }
+        //    }
+
+        //    return curveLoop;
+        //}
+
+        //private CurveLoop GetEdgeSoildProcessing(GeometryInstance geomElem)
+        //{
+        //    CurveLoop curveLoop = new CurveLoop();
+        //    foreach (var item in geomElem.SymbolGeometry)
+        //    {
+        //        /// 取得Type為Solid的枚舉
+        //        if (item.GetType().Name == "Solid")
+        //        {
+        //            /// 轉換至Solid型態
+        //            Solid solid = item as Solid;
+
+        //            /// 若無面，略過
+        //            if (solid.Faces.Size == 0) continue;
+
+        //            /// 列舉Solid所有面
+        //            foreach (Face face in solid.Faces)
+        //            {
+        //                /// 轉換至Surface型態
+        //                Surface surface = face.GetSurface();
+
+        //                /// 若為平面 else 圓柱面
+        //                if (face.GetType().Name == "PlanarFace")
+        //                {
+        //                    Plane plane = surface as Plane;
+        //                    /// 取得基準面
+        //                    if (Math.Round(plane.Normal.X, 2) == 0 && Math.Round(plane.Normal.Y, 2) == 0 && Math.Round(plane.Normal.Z, 2) == -1)
+        //                    {
+        //                        curveLoop = face.GetEdgesAsCurveLoops()[0];
+        //                    }
+        //                }
+        //                else if (face.GetType().Name == "CylindricalFace")
+        //                {
+        //                    CylindricalSurface csf = surface as CylindricalSurface;
+        //                }
+        //            }
+        //        }
+        //    }
+
+        //    return curveLoop;
+
+        //}
 
     }
 
